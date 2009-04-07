@@ -100,7 +100,7 @@ void thread_init ()
 
 	if (modoActual == Expropiativo)  {
 		signal (SIGALRM, timer_signal);
-		//sys_timer_create (CLOCK_REALTIME, 0, 0);		 
+//		sys_timer_create (CLOCK_REALTIME, 0, 0);		 
 	}
 	
 }
@@ -195,7 +195,7 @@ int numSgte ()
 	
 	while (CANT_TIQUETES_ACUM[i] < al)
 	{
-		printf ("Al: %d y acum = %d\n",al, CANT_TIQUETES_ACUM[i]);
+	//	printf ("Al: %d y acum = %d\n",al, CANT_TIQUETES_ACUM[i]);
 		i++;
 	}
 	printf ("Sgte hilo: %d\n", i);
