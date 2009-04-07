@@ -31,11 +31,11 @@ void inicializarVariables ()
 	for (i = 0; i<NUM_HILOS;i++)
 	{
 		CANT_TIQUETES [i] = (i+1)*10;
-		CANT_TRABAJO [i] = 75000000;
+		CANT_TRABAJO [i] = 750000*i;
 	}	
 	
 	//modoActual = NoExpropiativo;
-	modoActual = Expropiativo;
+	modoActual = NoExpropiativo;
 }
 
 void finalizarVariables ()
@@ -46,3 +46,6 @@ void finalizarVariables ()
 	
 //	free (RESPUESTAS);
 }
+
+
+

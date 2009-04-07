@@ -100,7 +100,7 @@ void thread_init ()
 
 	if (modoActual == Expropiativo)  {
 		signal (SIGALRM, timer_signal);
-		sys_timer_create (CLOCK_REALTIME, 0, 0);		 
+		//sys_timer_create (CLOCK_REALTIME, 0, 0);		 
 	}
 	
 }
