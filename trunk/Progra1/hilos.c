@@ -1,95 +1,144 @@
 #include <stdio.h>
-//#include <time.h>
 #include <stdlib.h>
 #include <setjmp.h>
-#include <unistd.h>
 
 #include <signal.h>
 #include <time.h>
-//#include <sys/time.h>
 
 #include "hilos.h"
 #include "Taylor.h"
 #include "Variables.h"
 
+#define TIPO_TIMER CLOCK_REALTIME
+#define SENAL_TIMER SIGRTMIN
+
+static timer_t scheduler_timer;
+static int timerEstablecido;
+
 static jmp_buf scheduler_env;
 static jmp_buf * thread_env;
 
-void timer_signal (int sig)
-{
-  //keep_going = 0;
-    signal (SIGALRM, timer_signal);
+void timer_handler(int sig, siginfo_t *si, void *uc);
+void establecer_timer_handler();
+void inicializar_timer();
+void finalizar_timer();
+void establecer_timer(int segundos);
+
+void ejecutar_hilo_ex(int n);
+void ejecutar_hilo(int n);
+void ejecutar_scheduler();
+
+void imprimirRespuestas();
+int numSgte ();
+int aleatorio (int max);
+
+void inicializar_timer() {
+
+    struct sigevent sev;
+
+    sev.sigev_notify = SIGEV_SIGNAL;
+    sev.sigev_signo = SENAL_TIMER;
+    sev.sigev_value.sival_ptr = &scheduler_timer;
+
+    timer_create(TIPO_TIMER, &sev, &scheduler_timer);
+}
+
+void finalizar_timer() {
+    timer_delete(scheduler_timer);
+}
+
+void establecer_timer(int segundos) {
+
+    struct itimerspec its;
+
+    its.it_value.tv_sec = segundos;
+    its.it_value.tv_nsec = 0;
+    its.it_interval.tv_sec = segundos;
+    its.it_interval.tv_nsec = 0;
+
+    timer_settime(scheduler_timer, 0, &its, NULL);
+
+    timerEstablecido = 1;
+
+    printf("Timer establecido con quantum: %d\n", segundos);
+}
+
+void timer_handler(int sig, siginfo_t *si, void *uc) {
+
 	//printf("Estoy en el timer\n");
 	longjmp(scheduler_env, 1);
 
+
+
 }
 
+void establecer_timer_handler() {
 
-unsigned int establecer_timer (unsigned int usegundos)
-{
-  /*struct itimerval old, new;
-  new.it_interval.tv_usec = 0;
-  new.it_interval.tv_sec = 0;
-  new.it_value.tv_usec = (long int) usegundos;
-  new.it_value.tv_sec = 0;
-  if (setitimer (ITIMER_REAL, &new, &old) < 0)
-    return 0;
-  else
-    return old.it_value.tv_sec;*/
-	//return alarm(segundos);
+    struct sigaction sa;
+
+    sa.sa_flags = SA_SIGINFO | SA_NODEFER;
+    sa.sa_handler = 0;
+    sa.sa_sigaction = timer_handler;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SENAL_TIMER, &sa, NULL);
 }
 
-void imprimirRespuestas();
-
-void ejecutar_scheduler(void) {
+void ejecutar_scheduler() {
 
     int val;
 	int count;
 	int numActual;
-	
+
 	val = 0;
 	count = 0;
 	numActual = 0;
 
-	//if (modoActual == Expropiativo)
-	//	establecer_timer(QUANTUM);	
-	
+        while(1) {
+
     val = setjmp(scheduler_env);
-	
+
+    // Inicializar los hilos
 	while (count < NUM_HILOS) {
 		count++;
+		if (count > 1) printf("Hilo %d inicializado\n", (val-1));
 		if (modoActual == Expropiativo)
 			ejecutar_hilo_ex(count-1);
 		else
 			ejecutar_hilo(count-1);
-		
 	}
-    
-	if (!val) {
-		
-        //ejecutar_hilo();
-    } else {
-		
-		
-		
+	if (!timerEstablecido)
+        printf("Hilo %d inicializado\n", (val-1));
+
+	if (val) {
+
+        // Establecer timer
+        if (modoActual == Expropiativo && !timerEstablecido) {
+            establecer_timer(QUANTUM);
+        }
+
 		// Revisar si ya los  hilos terminaron
 		imprimirRespuestas();
-		printf ("VALOR acum = %d\n", CANT_TIQUETES_ACUM[NUM_HILOS-1]);
-		if (CANT_TIQUETES_ACUM[NUM_HILOS-1] == 0) 
+		printf("VALOR acum = %d\n", CANT_TIQUETES_ACUM[NUM_HILOS-1]);
+
+        /*while (1) {
+            arcenesimo(val);
+        }*/
+
+		// Revisar si ya los  hilos terminaron
+		if (CANT_TIQUETES_ACUM[NUM_HILOS-1] == 0)
 		  return;
-		
+
 		numActual = numSgte();
-		
+
+		if (numActual >= NUM_HILOS) return;
+
 		printf("Principal: Transferir control al hilo %d\n", numActual);
-		
-		if (modoActual == Expropiativo) {
-		  int old = establecer_timer(QUANTUM);
-		  printf("Viejo timer: %d\n", old);
-		}
-		
+
 		longjmp(thread_env[numActual], numActual+1);
-				
+
     }
+
+        } // while
 
 }
 
@@ -99,107 +148,107 @@ void thread_init ()
 	thread_env = malloc (sizeof(jmp_buf)*NUM_HILOS);
 
 	if (modoActual == Expropiativo)  {
-		signal (SIGALRM, timer_signal);
-//		sys_timer_create (CLOCK_REALTIME, 0, 0);		 
+	    establecer_timer_handler();
+	    inicializar_timer();
+	    timerEstablecido = 0;
 	}
-	
+
 }
 
 void thread_destroy ()
 {
+    if (modoActual == Expropiativo) {
+        finalizar_timer();
+        timerEstablecido = 0;
+    }
 	free (thread_env);
 }
 
-
 void ejecutar_hilo(int n) {
-	
+
 	int num;
-	
+
     if (!(num = setjmp(thread_env[n]))) {
 		printf("Hilo: Ingreso al hilo %d\n", num);
 	} else {
 		num--;
-		//getchar();
 	}
-	       int tiquetes = CANT_TIQUETES[num];
-	       int trabajo = CANT_TRABAJO[num];
-	
-		int j = 0;
-		
-			while (j < QUANTUM * tiquetes)
-			{
-			  j++;
-			  //ITERACION_ACTUAL[num]++;
-			  RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
-			}			
-		
-		printf("Hilo %d: Salvado estado para la iteracion %d\n", num, ITERACION_ACTUAL[num]);
-	
+
+    int tiquetes = CANT_TIQUETES[num];
+    int trabajo = CANT_TRABAJO[num];
+
+	int j = 0;
+
+    while (j < QUANTUM * tiquetes)
+    {
+        j++;
+        RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
+    }
+
+    printf("Hilo %d: Salvado estado para la iteracion %ld\n", num, ITERACION_ACTUAL[num]);
+
 	if (trabajo <= ITERACION_ACTUAL[num])
 		CANT_TIQUETES [num] = 0;
-	
 
 	longjmp(scheduler_env, ITERACION_ACTUAL[num]);
 
-	
 }
 
 void ejecutar_hilo_ex(int n) {
 
 	int num;
-	
+
     if (!(num = setjmp(thread_env[n]))) {
-		printf("Hilo: Ingreso al hilo ex %d\n", num);
+		printf("Hilo %d: Ingreso modo ex. Tiquetes = %d, Trabajo = %ld\n",
+            n, CANT_TIQUETES[n], CANT_TRABAJO[n]);
+        longjmp(scheduler_env, (n + 1));
 	} else {
 		num--;
-		//getchar();
 	}
-	       
-	int tiquetes = CANT_TIQUETES[num];
+
 	int trabajo = CANT_TRABAJO[num];
-	
-		
-			while (ITERACION_ACTUAL[num] < trabajo)
-			{
-			  //ITERACION_ACTUAL[num]++;
-			  RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
-			}			
-		
-		printf("Hilo %d: Salvado estado para la iteracion ex %d\n", num, ITERACION_ACTUAL[num]);
-	
+
+    printf("Hilo %d: Iniciar iteracion ex %ld\n", num, ITERACION_ACTUAL[num]);
+
+    while (ITERACION_ACTUAL[num] < trabajo)
+    {
+        RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
+    }
+
+    printf("Hilo %d: Iteracion ex %ld finalizada\n", num, ITERACION_ACTUAL[num]);
+
 	if (trabajo <= ITERACION_ACTUAL[num])
 	{
 		CANT_TIQUETES [num] = 0;
-		longjmp(scheduler_env, ITERACION_ACTUAL[num]);
+        printf("Hilo %d finalizado\n", num);
 	}
-	
+
+	longjmp(scheduler_env, 1);
 
 }
-
 
 int numSgte ()
 {
 	int iter;
-	printf ("Lottery!\n");
 	for (iter = 0; iter<NUM_HILOS; iter++)
 	{
 		if (iter == 0)
 			CANT_TIQUETES_ACUM[iter] = CANT_TIQUETES[iter];
 		else
-			CANT_TIQUETES_ACUM[iter] = CANT_TIQUETES[iter-1]+ CANT_TIQUETES[iter];
+			CANT_TIQUETES_ACUM[iter] = CANT_TIQUETES[iter-1] + CANT_TIQUETES[iter];
 	}
-	printf ("Middle Lottery!\n");
+
 	int al = aleatorio (CANT_TIQUETES_ACUM[NUM_HILOS-1]);
-	printf ("Alea Lottery!\n");
+	printf ("al: %d\n", al);
 	int i = 0;
-	
-	while (CANT_TIQUETES_ACUM[i] < al)
+
+	while (i < NUM_HILOS && (CANT_TIQUETES_ACUM[i] < al || CANT_TIQUETES[i] == 0))
 	{
-	//	printf ("Al: %d y acum = %d\n",al, CANT_TIQUETES_ACUM[i]);
 		i++;
 	}
+
 	printf ("Sgte hilo: %d\n", i);
-	return i;	
+	return i;
 
 }
 
@@ -215,8 +264,8 @@ void imprimirRespuestas ()
 	printf ("Estado de respuestas:\n");
 	for (i = 0;i<NUM_HILOS;i++)
 	{
-		printf ("Hilo %d lleva %.30lle \n", i, RESPUESTAS[i]);
+		printf ("Hilo %d lleva %.30Le \n", i, RESPUESTAS[i]);
 	}
-		printf ("!\n");
+    printf ("!\n");
 }
 

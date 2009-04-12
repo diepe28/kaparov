@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+//#include <unistd.h>
+
 int potencia (int n)
 {
 	if (n%2 == 1)
@@ -9,15 +11,17 @@ int potencia (int n)
 	else return -1;
 }
 
-long double arcenesimo (int n)
+long double arcenesimo (long n)
 {
 	if (n == 0)
 		return 0.0;
-	int m = n;
+
+    //if ((n % 1000) == 0) sleep(2);
+        //printf("arcenesimo de multiplo de 1000: %ld\n", n);
+
 	int divisor = 2*n-1;
 	long double respuesta = 1.0;
-	respuesta = -1*pow (-1,n)*4/divisor;	
-	//printf ("Valor de respuesta: %f\n", respuesta);	
+	respuesta = -1*pow(-1,n)*4/divisor;
 	return respuesta;
 }
 
@@ -25,12 +29,12 @@ long double enesimo (int n)
 {
 	int i;
 	long double respuesta = 1.0;
-	
+
 	if (n==1)
 		return 2;
 	if (n==2)
 		return 0.33333;
-	
+
 	for (i = 1; i<(2*n)-1;i++)
 	{
 		if (i%2 == 1)
@@ -39,7 +43,6 @@ long double enesimo (int n)
 			respuesta /= i;
 	}
 	respuesta /= ((2*n)-1);
-//	printf ("Valor de %d es %f\n", n, respuesta);
 	return 2*respuesta;
 }
 
@@ -49,14 +52,8 @@ long double sumarN (int n)
 	long double respuesta = 0.00;
 	for (i = 1; i<=n; i++)
 	{
-		printf ("%.30lle\n", respuesta);
+		printf ("%.30Le\n", respuesta);
 		respuesta += arcenesimo(i);
 	}
 	return respuesta;
 }
-/*
-int main ()
-{
-	printf ("Valor obtenido %lle\n", sumarN(10000000));	
-	return 0;	
-}*/
