@@ -1,29 +1,31 @@
 #include <stdlib.h>
-#include "Variables.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "Variables.h"
 
 #define CANTIDAD_VARIABLES_ARCHIVO 53
 
 int NUM_HILOS;
-int * CANT_TRABAJO;
+long * CANT_TRABAJO;
 int * CANT_TIQUETES;
 int * CANT_TIQUETES_ACUM;
-int * ITERACION_ACTUAL;
+long * ITERACION_ACTUAL;
 long double * RESPUESTAS;
 int QUANTUM;
 ModoTrabajo modoActual;
 
-void cargarArchivo (char* file);
+void cargarArchivo (const char* file);
 int isDigit (char c);
 
 
-void inicializarVariables ()
+void inicializarVariables (const char * file)
 {
 	int i ;
 //	NUM_HILOS = 5;
-	cargarArchivo ("input");
-			
+
+	cargarArchivo ((file == NULL ? "input" : file));
+
 	for (i = 0; i<NUM_HILOS; i++)
 	{
 		RESPUESTAS [i] = 0.00;
@@ -36,8 +38,8 @@ void inicializarVariables ()
 	{
 		CANT_TIQUETES [i] = (i+1)*10;
 		CANT_TRABAJO [i] = 75000000;
-	}	
-	
+	}
+
 	//modoActual = NoExpropiativo;
 	//modoActual = Expropiativo;*/
 }
@@ -47,7 +49,7 @@ void finalizarVariables ()
 	free (CANT_TIQUETES);
 	free (CANT_TRABAJO);
 	free (ITERACION_ACTUAL);
-	
+
 //	free (RESPUESTAS);
 }
 
@@ -58,22 +60,22 @@ void cargarHilosModo (int *valores)
 	NUM_HILOS = valores[i++];
 	modoActual = valores[i++];
 	QUANTUM = valores[i++];
-	
+
 	CANT_TIQUETES = malloc (sizeof(int)*NUM_HILOS);
 	CANT_TRABAJO = malloc (sizeof(int)*NUM_HILOS);
 	CANT_TIQUETES_ACUM = malloc (sizeof(int)*NUM_HILOS);
 	RESPUESTAS = malloc (sizeof(long double)*NUM_HILOS);
 	ITERACION_ACTUAL = malloc (sizeof(int)*NUM_HILOS);
-	
+
 	for(j= 0; j<NUM_HILOS;j++)
 		CANT_TIQUETES[j] = valores[i++];
 	for (j=0; j<NUM_HILOS;j++)
 		CANT_TRABAJO[j] = 50*valores[i++];
-	
-	
+
+
 }
 
-void cargarArchivo (char* file)
+void cargarArchivo (const char* file)
 {
   FILE *fp;
   fp = fopen(file, "r");
@@ -108,7 +110,7 @@ void cargarArchivo (char* file)
 	  temp = getc(fp);
   }
   fclose (fp);
-	
+
 	cargarHilosModo (variables);
   return;
 }

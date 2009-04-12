@@ -6,7 +6,7 @@
 all: progra1
 
 progra1: Taylor.c hilos.c principal.c Variables.c
-	gcc -o pi Variables.c Taylor.c hilos.c  principal.c  -lm
+	gcc -o pi Variables.c Taylor.c hilos.c  principal.c -lm -lrt
 
 clean:
 	rm -f *.o pi
