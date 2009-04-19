@@ -55,6 +55,9 @@ el timer llega a su fin
 void actualizarBarra(int numBarra, double fraccion)
 {
     gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (ptrBarra->barras[numBarra]), fraccion);
+    sprintf(ptrBarra->mensajesEtiquetas[numBarra], "  Hilo: %d - Num Tiquetes: %d - Trabajo: %ld, pi: %0.30Lf",
+            (numBarra+1), CANT_TIQUETES[numBarra], CANT_TRABAJO[numBarra], RESPUESTAS[numBarra]);
+	gtk_label_set_text(GTK_LABEL(ptrBarra->etiquetasBarras[numBarra]), ptrBarra->mensajesEtiquetas[numBarra]);
     g_signal_emit_by_name(ptrBarra->ventana, "show");
     while (gtk_events_pending ())
 	  gtk_main_iteration ();
@@ -182,8 +185,8 @@ void desplegarBarrasProgreso(GtkWidget * panelVertical, BarraProgreso * datosBar
     for (i = 0; i < NUM_HILOS; i++) {
         datosBarra->marcosEtiquetas[i] = gtk_alignment_new (0, 0.5, 0, 0);
         datosBarra->mensajesEtiquetas[i] = g_malloc(100);
-        sprintf(datosBarra->mensajesEtiquetas[i], "  Hilo: %d - Num Tiquetes: %d - Trabajo: %ld",
-            (i+1), CANT_TIQUETES[i], CANT_TRABAJO[i]);
+        sprintf(datosBarra->mensajesEtiquetas[i], "  Hilo: %d - Num Tiquetes: %d - Trabajo: %ld, pi: %0.30Lf",
+            (i+1), CANT_TIQUETES[i], CANT_TRABAJO[i], RESPUESTAS[i]);
         datosBarra->etiquetasBarras[i] = gtk_label_new(datosBarra->mensajesEtiquetas[i]);
         gtk_container_add (GTK_CONTAINER (datosBarra->marcosEtiquetas[i]), datosBarra->etiquetasBarras[i]);
         gtk_table_attach_defaults (GTK_TABLE (tablaBarras), datosBarra->marcosEtiquetas[i], 0, 1, i, i+1);
