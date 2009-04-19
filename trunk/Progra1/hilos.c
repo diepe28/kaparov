@@ -8,12 +8,14 @@
 #include "hilos.h"
 #include "Taylor.h"
 #include "Variables.h"
+#include "interfaz.h"
 
 #define TIPO_TIMER CLOCK_REALTIME
 #define SENAL_TIMER SIGRTMIN
 
 static timer_t scheduler_timer;
 static int timerEstablecido;
+static int contadorHilos;
 
 static jmp_buf scheduler_env;
 static jmp_buf * thread_env;
@@ -86,11 +88,11 @@ void establecer_timer_handler() {
 void ejecutar_scheduler() {
 
     int val;
-	int count;
+	//int count;
 	int numActual;
 
 	val = 0;
-	count = 0;
+	contadorHilos = 0;
 	numActual = 0;
 
         while(1) {
@@ -98,13 +100,13 @@ void ejecutar_scheduler() {
     val = setjmp(scheduler_env);
 
     // Inicializar los hilos
-	while (count < NUM_HILOS) {
-		count++;
-		if (count > 1) printf("Hilo %d inicializado\n", (val-1));
+	while (contadorHilos < NUM_HILOS) {
+		contadorHilos++;
+		if (contadorHilos > 1) printf("Hilo %d inicializado\n", (val-1));
 		if (modoActual == Expropiativo)
-			ejecutar_hilo_ex(count-1);
+			ejecutar_hilo_ex(contadorHilos-1);
 		else
-			ejecutar_hilo(count-1);
+			ejecutar_hilo(contadorHilos-1);
 	}
 	if (!timerEstablecido)
         printf("Hilo %d inicializado\n", (val-1));
@@ -166,10 +168,12 @@ void thread_destroy ()
 
 void ejecutar_hilo(int n) {
 
-	int num;
+	int num, j;
+    double progreso;
 
     if (!(num = setjmp(thread_env[n]))) {
 		printf("Hilo: Ingreso al hilo %d\n", num);
+		longjmp(scheduler_env, (n + 1));
 	} else {
 		num--;
 	}
@@ -177,7 +181,7 @@ void ejecutar_hilo(int n) {
     int tiquetes = CANT_TIQUETES[num];
     int trabajo = CANT_TRABAJO[num];
 
-	int j = 0;
+	j = 0;
 
     while (j < QUANTUM * tiquetes)
     {
@@ -185,10 +189,15 @@ void ejecutar_hilo(int n) {
         RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
     }
 
-    printf("Hilo %d: Salvado estado para la iteracion %ld\n", num, ITERACION_ACTUAL[num]);
-
 	if (trabajo <= ITERACION_ACTUAL[num])
 		CANT_TIQUETES [num] = 0;
+
+    printf("Hilo %d: Salvado estado para la iteracion %ld\n", num, ITERACION_ACTUAL[num]);
+    progreso = (double)ITERACION_ACTUAL[num] / (double)CANT_TRABAJO[num];
+    if (progreso > 1.0) progreso = 1.0;
+    printf("Hilo %d: Progreso %f\n", num, progreso);
+    actualizarBarra(num, progreso);
+
 
 	longjmp(scheduler_env, ITERACION_ACTUAL[num]);
 
@@ -197,6 +206,7 @@ void ejecutar_hilo(int n) {
 void ejecutar_hilo_ex(int n) {
 
 	int num;
+	double progreso;
 
     if (!(num = setjmp(thread_env[n]))) {
 		printf("Hilo %d: Ingreso modo ex. Tiquetes = %d, Trabajo = %ld\n",
@@ -216,6 +226,11 @@ void ejecutar_hilo_ex(int n) {
     }
 
     printf("Hilo %d: Iteracion ex %ld finalizada\n", num, ITERACION_ACTUAL[num]);
+
+    progreso = (double)ITERACION_ACTUAL[num] / (double)CANT_TRABAJO[num];
+    if (progreso > 1.0) progreso = 1.0;
+    printf("Hilo %d: Progreso %f\n", num, progreso);
+    actualizarBarra(num, progreso);
 
 	if (trabajo <= ITERACION_ACTUAL[num])
 	{
