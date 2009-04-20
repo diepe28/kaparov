@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
 
@@ -62,15 +61,11 @@ void establecer_timer(int segundos) {
 
     timerEstablecido = 1;
 
-    printf("Timer establecido con quantum: %d\n", segundos);
 }
 
 void timer_handler(int sig, siginfo_t *si, void *uc) {
 
-	//printf("Estoy en el timer\n");
 	longjmp(scheduler_env, 1);
-
-
 
 }
 
@@ -88,28 +83,24 @@ void establecer_timer_handler() {
 void ejecutar_scheduler() {
 
     int val;
-	//int count;
 	int numActual;
 
 	val = 0;
-	contadorHilos = 0;
 	numActual = 0;
 
-        while(1) {
+    //while(1) {
 
     val = setjmp(scheduler_env);
 
     // Inicializar los hilos
 	while (contadorHilos < NUM_HILOS) {
+	    actualizarBarra(contadorHilos, 0.0);
 		contadorHilos++;
-		if (contadorHilos > 1) printf("Hilo %d inicializado\n", (val-1));
 		if (modoActual == Expropiativo)
 			ejecutar_hilo_ex(contadorHilos-1);
 		else
 			ejecutar_hilo(contadorHilos-1);
 	}
-	if (!timerEstablecido)
-        printf("Hilo %d inicializado\n", (val-1));
 
 	if (val) {
 
@@ -119,14 +110,6 @@ void ejecutar_scheduler() {
         }
 
 		// Revisar si ya los  hilos terminaron
-		imprimirRespuestas();
-		printf("VALOR acum = %d\n", CANT_TIQUETES_ACUM[NUM_HILOS-1]);
-
-        /*while (1) {
-            arcenesimo(val);
-        }*/
-
-		// Revisar si ya los  hilos terminaron
 		if (CANT_TIQUETES_ACUM[NUM_HILOS-1] == 0)
 		  return;
 
@@ -134,18 +117,18 @@ void ejecutar_scheduler() {
 
 		if (numActual >= NUM_HILOS) return;
 
-		printf("Principal: Transferir control al hilo %d\n", numActual);
-
 		longjmp(thread_env[numActual], numActual+1);
 
     }
 
-        } // while
+    //} // while
 
 }
 
 void thread_init ()
 {
+	contadorHilos = 0;
+
 	srand(time(NULL));
 	thread_env = malloc (sizeof(jmp_buf)*NUM_HILOS);
 
@@ -172,32 +155,24 @@ void ejecutar_hilo(int n) {
     double progreso;
 
     if (!(num = setjmp(thread_env[n]))) {
-		printf("Hilo: Ingreso al hilo %d\n", num);
 		longjmp(scheduler_env, (n + 1));
 	} else {
 		num--;
 	}
 
-    int tiquetes = CANT_TIQUETES[num];
-    int trabajo = CANT_TRABAJO[num];
-
 	j = 0;
-
-    while (j < QUANTUM * tiquetes)
+    while (j < QUANTUM * CANT_TIQUETES[num] && ITERACION_ACTUAL[num] < CANT_TRABAJO[num])
     {
         j++;
         RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
     }
 
-	if (trabajo <= ITERACION_ACTUAL[num])
+	if (CANT_TRABAJO[num] <= ITERACION_ACTUAL[num])
 		CANT_TIQUETES [num] = 0;
 
-    printf("Hilo %d: Salvado estado para la iteracion %ld\n", num, ITERACION_ACTUAL[num]);
     progreso = (double)ITERACION_ACTUAL[num] / (double)CANT_TRABAJO[num];
     if (progreso > 1.0) progreso = 1.0;
-    printf("Hilo %d: Progreso %f\n", num, progreso);
     actualizarBarra(num, progreso);
-
 
 	longjmp(scheduler_env, ITERACION_ACTUAL[num]);
 
@@ -209,8 +184,6 @@ void ejecutar_hilo_ex(int n) {
 	double progreso;
 
     if (!(num = setjmp(thread_env[n]))) {
-		printf("Hilo %d: Ingreso modo ex. Tiquetes = %d, Trabajo = %ld\n",
-            n, CANT_TIQUETES[n], CANT_TRABAJO[n]);
         longjmp(scheduler_env, (n + 1));
 	} else {
 		num--;
@@ -218,24 +191,19 @@ void ejecutar_hilo_ex(int n) {
 
 	int trabajo = CANT_TRABAJO[num];
 
-    printf("Hilo %d: Iniciar iteracion ex %ld\n", num, ITERACION_ACTUAL[num]);
-
     while (ITERACION_ACTUAL[num] < trabajo)
     {
         RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
     }
 
-    printf("Hilo %d: Iteracion ex %ld finalizada\n", num, ITERACION_ACTUAL[num]);
 
     progreso = (double)ITERACION_ACTUAL[num] / (double)CANT_TRABAJO[num];
     if (progreso > 1.0) progreso = 1.0;
-    printf("Hilo %d: Progreso %f\n", num, progreso);
     actualizarBarra(num, progreso);
 
 	if (trabajo <= ITERACION_ACTUAL[num])
 	{
 		CANT_TIQUETES [num] = 0;
-        printf("Hilo %d finalizado\n", num);
 	}
 
 	longjmp(scheduler_env, 1);
@@ -244,25 +212,23 @@ void ejecutar_hilo_ex(int n) {
 
 int numSgte ()
 {
-	int iter;
+	int iter, al, i;
 	for (iter = 0; iter<NUM_HILOS; iter++)
 	{
 		if (iter == 0)
 			CANT_TIQUETES_ACUM[iter] = CANT_TIQUETES[iter];
 		else
-			CANT_TIQUETES_ACUM[iter] = CANT_TIQUETES[iter-1] + CANT_TIQUETES[iter];
+			CANT_TIQUETES_ACUM[iter] = CANT_TIQUETES_ACUM[iter-1] + CANT_TIQUETES[iter];
 	}
 
-	int al = aleatorio (CANT_TIQUETES_ACUM[NUM_HILOS-1]);
-	printf ("al: %d\n", al);
-	int i = 0;
+	al = aleatorio (CANT_TIQUETES_ACUM[NUM_HILOS-1]);
 
+    i = 0;
 	while (i < NUM_HILOS && (CANT_TIQUETES_ACUM[i] < al || CANT_TIQUETES[i] == 0))
 	{
 		i++;
 	}
 
-	printf ("Sgte hilo: %d\n", i);
 	return i;
 
 }
@@ -271,16 +237,5 @@ int aleatorio (int max)
 {
 	if (max == 0) return 0;
 	return rand()%max;
-}
-
-void imprimirRespuestas ()
-{
-	int i;
-	printf ("Estado de respuestas:\n");
-	for (i = 0;i<NUM_HILOS;i++)
-	{
-		printf ("Hilo %d lleva %.30Le \n", i, RESPUESTAS[i]);
-	}
-    printf ("!\n");
 }
 
