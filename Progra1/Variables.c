@@ -8,8 +8,8 @@
 
 int NUM_HILOS;
 long * CANT_TRABAJO;
-int * CANT_TIQUETES;
-int * CANT_TIQUETES_ACUM;
+long * CANT_TIQUETES;
+long * CANT_TIQUETES_ACUM;
 long * ITERACION_ACTUAL;
 long double * RESPUESTAS;
 int QUANTUM;
@@ -18,11 +18,9 @@ ModoTrabajo modoActual;
 void cargarArchivo (const char* file);
 int isDigit (char c);
 
-
 void inicializarVariables (const char * file)
 {
 	int i ;
-//	NUM_HILOS = 5;
 
 	cargarArchivo ((file == NULL ? "input" : file));
 
@@ -32,16 +30,6 @@ void inicializarVariables (const char * file)
 		CANT_TIQUETES_ACUM [i]  =1;
 		ITERACION_ACTUAL [i] = 0;
 	}
-	//QUANTUM = 1;
-	/*
-	for (i = 0; i<NUM_HILOS;i++)
-	{
-		CANT_TIQUETES [i] = (i+1)*10;
-		CANT_TRABAJO [i] = 75000000;
-	}
-
-	//modoActual = NoExpropiativo;
-	//modoActual = Expropiativo;*/
 }
 
 void finalizarVariables ()
@@ -53,7 +41,7 @@ void finalizarVariables ()
 //	free (RESPUESTAS);
 }
 
-void cargarHilosModo (int *valores)
+void cargarHilosModo (long *valores)
 {
 	int i = 0;
 	int j = 0;
@@ -61,16 +49,18 @@ void cargarHilosModo (int *valores)
 	modoActual = valores[i++];
 	QUANTUM = valores[i++];
 
-	CANT_TIQUETES = malloc (sizeof(int)*NUM_HILOS);
-	CANT_TRABAJO = malloc (sizeof(int)*NUM_HILOS);
-	CANT_TIQUETES_ACUM = malloc (sizeof(int)*NUM_HILOS);
+	CANT_TIQUETES = malloc (sizeof(long)*NUM_HILOS);
+	CANT_TRABAJO = malloc (sizeof(long)*NUM_HILOS);
+	CANT_TIQUETES_ACUM = malloc (sizeof(long)*NUM_HILOS);
 	RESPUESTAS = malloc (sizeof(long double)*NUM_HILOS);
-	ITERACION_ACTUAL = malloc (sizeof(int)*NUM_HILOS);
+	ITERACION_ACTUAL = malloc (sizeof(long)*NUM_HILOS);
 
-	for(j= 0; j<NUM_HILOS;j++)
+	for(j= 0; j<NUM_HILOS;j++) {
 		CANT_TIQUETES[j] = valores[i++];
-	for (j=0; j<NUM_HILOS;j++)
+	}
+	for (j=0; j<NUM_HILOS;j++) {
 		CANT_TRABAJO[j] = 50*valores[i++];
+	}
 
 
 }
@@ -78,40 +68,41 @@ void cargarHilosModo (int *valores)
 void cargarArchivo (const char* file)
 {
   FILE *fp;
+  char temp;
+
+  long variables [CANTIDAD_VARIABLES_ARCHIVO];
+  int numVariables = 0;
+  int i;
+
   fp = fopen(file, "r");
 
-  int  variables [CANTIDAD_VARIABLES_ARCHIVO];
-  int numVariables = 0;
-	int i;
-
-  char temp = getc (fp);
+  temp = getc (fp);
   while (temp != EOF)
   {
-	  int pos;
+	int pos;
     char s[11];
     for (pos = 0; isDigit(temp) && pos <10 ;pos++)
 	  {
-		//  printf ("%c", temp);
 	    s[pos] = temp;
-		  temp = getc (fp);
+        temp = getc (fp);
 	  }
-	  	//printf(" VALOR DE POS: %d\n", pos);
+
 	  if (pos != 0)
 	  {
 		  char num[pos];
 		  for (i=0;i<pos;i++)
 			  num[i] = s[i];
 		  variables[numVariables] = atoi(num);
-		 // printf("%d\n", variables[numVariables]);
 		  numVariables++;
 	  }
+
 	  if (numVariables == CANTIDAD_VARIABLES_ARCHIVO)
 		  break;
 	  temp = getc(fp);
   }
   fclose (fp);
 
-	cargarHilosModo (variables);
+  cargarHilosModo (variables);
   return;
 }
 

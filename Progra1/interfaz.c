@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "Variables.h"
 
+/* Estructura para los datos de las barras de progreso */
 typedef struct {
     GtkWidget *ventana;
     GtkWidget **barras;
@@ -9,67 +10,40 @@ typedef struct {
     GtkWidget **etiquetasBarras;
     char **mensajesEtiquetas;
     GtkWidget **marcosEtiquetas;
+    GtkWidget **etiquetasPi;
+    char **mensajesPi;
+    GtkWidget **marcosPi;
     void (*funcion)();
-    //int timer;
-    //gboolean activity_mode;
 } BarraProgreso;
 
+/* Buffers de los mensajes informativos */
 static char mensajeModo[100];
 static char mensajeQuantum[100];
 static char mensajeNumHilos[100];
 
+/* Datos globales de las barras de progreso */
 static BarraProgreso *ptrBarra;
 
-/*
-Esta es la funcion que se ejecuta cada X milisegundos, es decir, cada vez que
-el timer llega a su fin
-*/
-
-/*static gboolean progress_timeout( gpointer data )
-{
-  ProgressData *pdata = (ProgressData *)data;
-  gdouble new_val;
-
-//ESTA FUNCION SE VA A EJECUTAR CADA 100 MILISEGUNDOS, AQUI DEBO CONTROLAR SI DEBO AUMENTAR LA BARRA DE PROGRESO
-
-  if (pdata->activity_mode)
-    gtk_progress_bar_pulse (GTK_PROGRESS_BAR (pdata->pbar));
-  else
-    {
-      // al valor actual, le aumentamos 0,01
-
-	//sleep((rand()%5) + 1);
-      new_val = gtk_progress_bar_get_fraction (GTK_PROGRESS_BAR (pdata->pbar)) + 0.01;
-
-      if (new_val > 1.0)
-	new_val = 0.0;
-
-      // setiamos el nuevo valor
-      gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pdata->pbar), new_val);
-    }
-  // siempre devuelve true;
-
-  return TRUE;
-}*/
-
+/* Actualiza la barra de progreso indicada */
 void actualizarBarra(int numBarra, double fraccion)
 {
+
     gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (ptrBarra->barras[numBarra]), fraccion);
-    sprintf(ptrBarra->mensajesEtiquetas[numBarra], "  Hilo: %d - Num Tiquetes: %d - Trabajo: %ld, pi: %0.30Lf",
-            (numBarra+1), CANT_TIQUETES[numBarra], CANT_TRABAJO[numBarra], RESPUESTAS[numBarra]);
-	gtk_label_set_text(GTK_LABEL(ptrBarra->etiquetasBarras[numBarra]), ptrBarra->mensajesEtiquetas[numBarra]);
+    sprintf(ptrBarra->mensajesPi[numBarra], " Pi: %0.30Lg ", RESPUESTAS[numBarra]);
+	gtk_label_set_text(GTK_LABEL(ptrBarra->etiquetasPi[numBarra]), ptrBarra->mensajesPi[numBarra]);
     g_signal_emit_by_name(ptrBarra->ventana, "show");
+
     while (gtk_events_pending ())
 	  gtk_main_iteration ();
-
 }
 
 /* Funcion a invocar al inicial el ciclo principal */
 static gboolean despliegueIniciado(gpointer datos)
 {
-
+    // Asignar puntero global a los datos de las barras de progreso
     ptrBarra = (BarraProgreso *) datos;
 
+    // Invocar funcion principal de los hilos (ejecutar_scheduler)
     ptrBarra->funcion();
 
     return TRUE;
@@ -78,9 +52,15 @@ static gboolean despliegueIniciado(gpointer datos)
 /* Finaliza la ventana principal */
 static void finalizarDespliegue(GtkWidget *widget, BarraProgreso *datosBarra)
 {
-    //g_source_remove (pdata->timer);
-    //pdata->timer = 0;
     int i;
+
+    // Liberar memoria de los hilos
+    g_free(datosBarra->marcosPi);
+    for (i = 0; i < NUM_HILOS; i++) {
+        g_free(datosBarra->mensajesPi[i]);
+    }
+    g_free(datosBarra->mensajesPi);
+    g_free(datosBarra->etiquetasPi);
 
     g_free(datosBarra->marcosEtiquetas);
     for (i = 0; i < NUM_HILOS; i++) {
@@ -88,6 +68,7 @@ static void finalizarDespliegue(GtkWidget *widget, BarraProgreso *datosBarra)
     }
     g_free(datosBarra->mensajesEtiquetas);
     g_free(datosBarra->etiquetasBarras);
+
     g_free(datosBarra->marcosBarras);
     g_free(datosBarra->barras);
 
@@ -172,7 +153,7 @@ void desplegarBarrasProgreso(GtkWidget * panelVertical, BarraProgreso * datosBar
     gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (marcoBarras),
         GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_box_pack_start (GTK_BOX (panelVertical), marcoBarras, TRUE, TRUE, 0);
-    tablaBarras = gtk_table_new (NUM_HILOS, 2, FALSE);
+    tablaBarras = gtk_table_new (NUM_HILOS, 3, FALSE);
     gtk_table_set_row_spacings (GTK_TABLE (tablaBarras), 5);
     gtk_table_set_col_spacings (GTK_TABLE (tablaBarras), 5);
     gtk_scrolled_window_add_with_viewport (
@@ -185,8 +166,8 @@ void desplegarBarrasProgreso(GtkWidget * panelVertical, BarraProgreso * datosBar
     for (i = 0; i < NUM_HILOS; i++) {
         datosBarra->marcosEtiquetas[i] = gtk_alignment_new (0, 0.5, 0, 0);
         datosBarra->mensajesEtiquetas[i] = g_malloc(100);
-        sprintf(datosBarra->mensajesEtiquetas[i], "  Hilo: %d - Num Tiquetes: %d - Trabajo: %ld, pi: %0.30Lf",
-            (i+1), CANT_TIQUETES[i], CANT_TRABAJO[i], RESPUESTAS[i]);
+        sprintf(datosBarra->mensajesEtiquetas[i], "  Hilo: %d - Num Tiquetes: %ld - Trabajo: %ld",
+            (i+1), CANT_TIQUETES[i], CANT_TRABAJO[i]);
         datosBarra->etiquetasBarras[i] = gtk_label_new(datosBarra->mensajesEtiquetas[i]);
         gtk_container_add (GTK_CONTAINER (datosBarra->marcosEtiquetas[i]), datosBarra->etiquetasBarras[i]);
         gtk_table_attach_defaults (GTK_TABLE (tablaBarras), datosBarra->marcosEtiquetas[i], 0, 1, i, i+1);
@@ -201,6 +182,20 @@ void desplegarBarrasProgreso(GtkWidget * panelVertical, BarraProgreso * datosBar
         gtk_table_attach_defaults (GTK_TABLE (tablaBarras), datosBarra->marcosBarras[i], 1, 2, i, i+1);
         datosBarra->barras[i] = gtk_progress_bar_new ();
         gtk_container_add (GTK_CONTAINER (datosBarra->marcosBarras[i]), datosBarra->barras[i]);
+    }
+
+    // Etiquetas para el calculo de pi
+    datosBarra->marcosPi = g_malloc(NUM_HILOS * sizeof(GtkWidget*));
+    datosBarra->mensajesPi = g_malloc(NUM_HILOS * sizeof(char*));
+    datosBarra->etiquetasPi = g_malloc(NUM_HILOS * sizeof(GtkWidget*));
+    for (i = 0; i < NUM_HILOS; i++) {
+        datosBarra->marcosPi[i] = gtk_alignment_new (0, 0.5, 0, 0);
+        datosBarra->mensajesPi[i] = g_malloc(100);
+        sprintf(datosBarra->mensajesPi[i], " Pi: %0.30Lg ", RESPUESTAS[i]);
+        datosBarra->etiquetasPi[i] = gtk_label_new(datosBarra->mensajesPi[i]);
+        gtk_container_add (GTK_CONTAINER (datosBarra->marcosPi[i]), datosBarra->etiquetasPi[i]);
+        gtk_table_attach_defaults (GTK_TABLE (tablaBarras), datosBarra->marcosPi[i], 2, 3, i, i+1);
+
     }
 
 }
@@ -224,10 +219,6 @@ void desplegarPanelPrincipal(BarraProgreso * datosBarra)
     // Desplegar boton para salir
     desplegarBotonSalir(panelVertical, datosBarra);
 
-    //pdata->activity_mode = FALSE;
-    /* Salto a la funcion progress_timeout cada 100 milisegundos */
-    //pdata->timer = g_timeout_add (100, progress_timeout, pdata);
-
 }
 
 /* Despliega la ventana principal */
@@ -243,7 +234,7 @@ void desplegarThreads(void (*funcion)())
     gtk_window_set_title (GTK_WINDOW (datosBarra->ventana), "Calcular Pi");
     gtk_container_set_border_width (GTK_CONTAINER (datosBarra->ventana), 0);
     gtk_window_set_position(GTK_WINDOW (datosBarra->ventana), GTK_WIN_POS_CENTER);
-    gtk_widget_set_size_request (datosBarra->ventana, 540, (NUM_HILOS < 10 ? 80 * (NUM_HILOS + 1) : 600));
+    gtk_widget_set_size_request (datosBarra->ventana, 840, (NUM_HILOS < 8 ? 80 * (NUM_HILOS + 1) : 600));
 
     // Agregar manejador para finalizacion de la ventana
     g_signal_connect (G_OBJECT (datosBarra->ventana), "destroy",

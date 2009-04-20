@@ -4,8 +4,8 @@
 typedef enum  {Expropiativo, NoExpropiativo } ModoTrabajo;
 extern int NUM_HILOS;
 extern long * CANT_TRABAJO;
-extern int * CANT_TIQUETES;
-extern int * CANT_TIQUETES_ACUM;
+extern long * CANT_TIQUETES;
+extern long * CANT_TIQUETES_ACUM;
 extern long * ITERACION_ACTUAL;
 extern long double * RESPUESTAS;
 extern int QUANTUM;
