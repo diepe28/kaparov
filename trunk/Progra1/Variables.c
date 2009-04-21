@@ -62,7 +62,6 @@ void cargarHilosModo (long *valores)
 		CANT_TRABAJO[j] = 50*valores[i++];
 	}
 
-
 }
 
 void cargarArchivo (const char* file)

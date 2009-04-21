@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "Variables.h"
 
 /* Estructura para los datos de las barras de progreso */
@@ -27,11 +28,12 @@ static BarraProgreso *ptrBarra;
 /* Actualiza la barra de progreso indicada */
 void actualizarBarra(int numBarra, double fraccion)
 {
-
-    gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (ptrBarra->barras[numBarra]), fraccion);
-    sprintf(ptrBarra->mensajesPi[numBarra], " Pi: %0.30Lg ", RESPUESTAS[numBarra]);
-	gtk_label_set_text(GTK_LABEL(ptrBarra->etiquetasPi[numBarra]), ptrBarra->mensajesPi[numBarra]);
-    g_signal_emit_by_name(ptrBarra->ventana, "show");
+    if (ptrBarra != NULL) {
+        gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (ptrBarra->barras[numBarra]), fraccion);
+        sprintf(ptrBarra->mensajesPi[numBarra], " Pi: %0.30Lg ", RESPUESTAS[numBarra]);
+        gtk_label_set_text(GTK_LABEL(ptrBarra->etiquetasPi[numBarra]), ptrBarra->mensajesPi[numBarra]);
+        g_signal_emit_by_name(ptrBarra->ventana, "show");
+    }
 
     while (gtk_events_pending ())
 	  gtk_main_iteration ();
@@ -74,7 +76,8 @@ static void finalizarDespliegue(GtkWidget *widget, BarraProgreso *datosBarra)
 
     datosBarra->ventana = NULL;
     g_free (datosBarra);
-    gtk_main_quit ();
+
+    exit(0);
 }
 
 /* Inicializa la interfaz GTK */
@@ -234,7 +237,7 @@ void desplegarThreads(void (*funcion)())
     gtk_window_set_title (GTK_WINDOW (datosBarra->ventana), "Calcular Pi");
     gtk_container_set_border_width (GTK_CONTAINER (datosBarra->ventana), 0);
     gtk_window_set_position(GTK_WINDOW (datosBarra->ventana), GTK_WIN_POS_CENTER);
-    gtk_widget_set_size_request (datosBarra->ventana, 840, (NUM_HILOS < 8 ? 80 * (NUM_HILOS + 1) : 600));
+    gtk_widget_set_size_request (datosBarra->ventana, 840, (NUM_HILOS < 8 ? 80 * (NUM_HILOS + 1) : 680));
 
     // Agregar manejador para finalizacion de la ventana
     g_signal_connect (G_OBJECT (datosBarra->ventana), "destroy",
