@@ -15,6 +15,8 @@
 static timer_t scheduler_timer;
 static int timerEstablecido;
 static int contadorHilos;
+static int indiceHilos;
+static int calculandoPi;
 
 static jmp_buf scheduler_env;
 static jmp_buf * thread_env;
@@ -23,7 +25,7 @@ void timer_handler(int sig, siginfo_t *si, void *uc);
 void establecer_timer_handler();
 void inicializar_timer();
 void finalizar_timer();
-void establecer_timer(int segundos);
+void establecer_timer(long milisegundos);
 
 void ejecutar_hilo_ex(int n);
 void ejecutar_hilo(int n);
@@ -48,14 +50,14 @@ void finalizar_timer() {
     timer_delete(scheduler_timer);
 }
 
-void establecer_timer(int segundos) {
+void establecer_timer(long milisegundos) {
 
     struct itimerspec its;
 
-    its.it_value.tv_sec = segundos;
-    its.it_value.tv_nsec = 0;
-    its.it_interval.tv_sec = segundos;
-    its.it_interval.tv_nsec = 0;
+    its.it_value.tv_sec = milisegundos / 1000;
+    its.it_value.tv_nsec = (milisegundos % 1000) * 1000000;
+    its.it_interval.tv_sec = milisegundos / 1000;
+    its.it_interval.tv_nsec = (milisegundos % 1000) * 1000000;
 
     timer_settime(scheduler_timer, 0, &its, NULL);
 
@@ -65,15 +67,30 @@ void establecer_timer(int segundos) {
 
 void timer_handler(int sig, siginfo_t *si, void *uc) {
 
-	longjmp(scheduler_env, 1);
+	//longjmp(scheduler_env, 1);
 
+    double progreso;
+
+    if (CANT_TIQUETES_ACUM[NUM_HILOS-1] != 0 && calculandoPi) {
+
+        indiceHilos = numSgte();
+
+        if (indiceHilos < NUM_HILOS) {
+
+        progreso = (double)ITERACION_ACTUAL[indiceHilos] / (double)CANT_TRABAJO[indiceHilos];
+        if (progreso > 1.0) progreso = 1.0;
+        actualizarBarra(indiceHilos, progreso);
+
+        }
+
+    }
 }
 
 void establecer_timer_handler() {
 
     struct sigaction sa;
 
-    sa.sa_flags = SA_SIGINFO | SA_NODEFER;
+    sa.sa_flags = SA_SIGINFO;
     sa.sa_handler = 0;
     sa.sa_sigaction = timer_handler;
     sigemptyset(&sa.sa_mask);
@@ -87,8 +104,6 @@ void ejecutar_scheduler() {
 
 	val = 0;
 	numActual = 0;
-
-    //while(1) {
 
     val = setjmp(scheduler_env);
 
@@ -110,18 +125,19 @@ void ejecutar_scheduler() {
         }
 
 		// Revisar si ya los  hilos terminaron
-		if (CANT_TIQUETES_ACUM[NUM_HILOS-1] == 0)
+		if (CANT_TIQUETES_ACUM[NUM_HILOS-1] == 0) {
 		  return;
+		}
 
 		numActual = numSgte();
 
-		if (numActual >= NUM_HILOS) return;
+		if (numActual >= NUM_HILOS) {
+		    return;
+		}
 
 		longjmp(thread_env[numActual], numActual+1);
 
     }
-
-    //} // while
 
 }
 
@@ -181,29 +197,30 @@ void ejecutar_hilo(int n) {
 void ejecutar_hilo_ex(int n) {
 
 	int num;
-	double progreso;
 
     if (!(num = setjmp(thread_env[n]))) {
         longjmp(scheduler_env, (n + 1));
 	} else {
 		num--;
 	}
+	indiceHilos = num;
 
-	int trabajo = CANT_TRABAJO[num];
-
-    while (ITERACION_ACTUAL[num] < trabajo)
+    calculandoPi = 1;
+    while (ITERACION_ACTUAL[indiceHilos] < CANT_TRABAJO[indiceHilos])
     {
-        RESPUESTAS[num] += arcenesimo(ITERACION_ACTUAL[num]++);
+        RESPUESTAS[indiceHilos] += arcenesimo(ITERACION_ACTUAL[indiceHilos]++);
+        if (indiceHilos >= NUM_HILOS) {
+            break;
+        }
     }
+    calculandoPi = 0;
 
-
-    progreso = (double)ITERACION_ACTUAL[num] / (double)CANT_TRABAJO[num];
-    if (progreso > 1.0) progreso = 1.0;
-    actualizarBarra(num, progreso);
-
-	if (trabajo <= ITERACION_ACTUAL[num])
+	if (indiceHilos < NUM_HILOS && CANT_TRABAJO[indiceHilos] <= ITERACION_ACTUAL[indiceHilos])
 	{
-		CANT_TIQUETES [num] = 0;
+		CANT_TIQUETES [indiceHilos] = 0;
+        double progreso = (double)ITERACION_ACTUAL[indiceHilos] / (double)CANT_TRABAJO[indiceHilos];
+        if (progreso > 1.0) progreso = 1.0;
+        actualizarBarra(indiceHilos, progreso);
 	}
 
 	longjmp(scheduler_env, 1);
@@ -212,6 +229,7 @@ void ejecutar_hilo_ex(int n) {
 
 int numSgte ()
 {
+
 	int iter, al, i;
 	for (iter = 0; iter<NUM_HILOS; iter++)
 	{
