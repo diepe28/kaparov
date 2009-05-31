@@ -1,0 +1,27 @@
+# depslib dependency file v1.0
+1243802504 source:/home/eddy/Documentos/Maestría/Operativos/Progras/Progra2/Proyecto2/ServFIFO.c
+	"bibliotecas/referencias.h"
+	"bibliotecas/listaClientes.h"
+
+1243801713 /home/eddy/Documentos/Maestría/Operativos/Progras/Progra2/Proyecto2/bibliotecas/referencias.h
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<pthread.h>
+	<semaphore.h>
+	<arpa/inet.h>
+	<netdb.h>
+	<netinet/in.h>
+	<unistd.h>
+	<wait.h>
+	<sys/types.h>
+	<sys/ipc.h>
+	<sys/shm.h>
+	<sys/sem.h>
+
+1243802629 /home/eddy/Documentos/Maestría/Operativos/Progras/Progra2/Proyecto2/bibliotecas/listaClientes.h
+	"referencias.h"
+
+1243802899 source:/home/eddy/Documentos/Maestría/Operativos/Progras/Progra2/Proyecto2/bibliotecas/listaClientes.c
+	"listaClientes.h"
+
