@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/timeb.h>
 #include <time.h>
+#include "http/ProtocoloHttp.h"
 
 
 /**
@@ -43,27 +44,63 @@ long int getTimeMil ()
 
 //void recibirArchivo(int idsocket, int puerto, char* archivo);
 
-void recibirArchivo (int idsocket, int puertoArchivo, char* archivo)
+void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 {
 
-	//struct sockaddr_in clientArchivo;/* para la información de la dirección del cliente */
-	/*int sin_sizeArchivo;
-	int fdVideo2; // los ficheros descriptores */
+	struct sockaddr_in clientArchivo;/* para la información de la dirección del cliente */
+	clientArchivo.sin_family = AF_INET;
+	//clienteArchivo.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
+	inet_pton(AF_INET, host, &clientArchivo.sin_addr.s_addr);
+	clientArchivo.sin_port = puertoArchivo;
+	
+
+	int sin_sizeArchivo;
+	int fdArc; // los ficheros descriptores */
+	int fd;
+
+	char buffer [1024];
+	
+	SolicitudHttp * shttp = malloc (sizeof (SolicitudHttp));
+
+	shttp->versionMenor = 1;
+	shttp->versionMayor = 1;
+	shttp->metodo = GET;
+	shttp->url = malloc (strlen (archivo));
+	strcpy (shttp->url, archivo);
+
+	char* encabezado = solicitudHttpABytes (shttp, 0);
+
 	//void *bufferfinal=(void*)malloc(MAX_BUFFER);
-	/*int numbytes;
-	sin_sizeVideo=sizeof(struct sockaddr_in);
-	int as=fork();
-	if(as==0){
+	int numbytes = strlen(encabezado);
+	//sin_sizeVideo=sizeof(struct sockaddr_in);
+	//int as=fork();
+	/*if(as==0){
 		char* comand=(char*)malloc(sizeof(char)*200);
 		sprintf(comand,"xine -pqg --no-logo --no-splash tcp://localhost:%d", params.puertoArchivo);
 		system(comand);
 		free(comand);
 		exit(0);
+	}*/
+	if ((fdArc = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("socket");
+		return;
 	}
-	if ((fdVideo2 = accept(fdVid,(struct sockaddr *)&clientVideo,(socklen_t *)&sin_sizeVideo))==-1){
-		printf("VIDEO: Error en accept()\n");
-		return NULL;
+
+	if ((fd = connect(fdArc,(struct sockaddr *)&clientArchivo,sizeof(clientArchivo)))==-1){
+		printf("error en connect\n");
+		return;
 	}
+	
+	if ((send (fdArc, encabezado, numbytes, 0)) == -1){
+		printf ("error en el send\n");
+		return;
+	}
+
+	if (recv(fdArc, buffer, 1024, 0) == -1) {
+               printf ("error en el recv\n");
+                exit(1);
+        }
+/*
 	else{
 		memset(bufferfinal, 0, MAX_BUFFER);
 		while(1){
@@ -82,8 +119,9 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo)
 				break;
 			}
 		}
-	}
-	*/
+	  }
+*/	
+	
     return;
 }
 
@@ -95,7 +133,7 @@ void *llamarN (void* params)
     while (iter<PC->nProcesos)
     {
         long int inicioEspera = getTimeMil();
-        recibirArchivo (PC->idsocket, PC->puertoArchivo, PC->archivo);
+        recibirArchivo (PC->idsocket, PC->puertoArchivo, PC->archivo, "186.15.2.122");
         long int finEspera = getTimeMil();
         pthread_mutex_lock (&esperaConexion);
         tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;

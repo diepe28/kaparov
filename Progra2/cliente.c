@@ -1,4 +1,5 @@
 #include "cliente_socket_functions.c"
+//#include "http/ProtocoloHttp.c"
 
 
 int QUE_HACER = 0;
@@ -15,20 +16,29 @@ void mostrarEstadisticas();
 
 int main (int argc, char *argv[])
 {
-
-	if (argc != 5)
+   /* int i;
+    for (i = 1; i<6;i++)
+    {
+	printf ("%s\n", argv[i]); 
+    }*/
+      printf ("Prueba");
+	if (argc != 6)
 	{
-        printf ("Se espera que reciba como parámetros <maquina> <puerto> <archivo> <N-Threads> <Nciclos>");
+        printf ("Se espera que reciba como parámetros <maquina> <puerto> <archivo> <N-Threads> <Nciclos>\n");
         return 0;
 	}
 
     else
     {
-        hostName = argv[0];
-        puertoVideo = atoi(argv[1]);
-        archi = argv[2];
-        hilos = atoi(argv[3]);
-        procesos = atoi(argv[4]);
+      printf ("Se van a asignar valores");
+
+        hostName = argv[1];
+        puertoVideo = atoi(argv[2]);
+        archi = argv[3];
+        hilos = atoi(argv[4]);
+        procesos = atoi(argv[5]);
+
+	printf ("Se asignan valores");
 
         paramCliente pc;
         pc.nProcesos = procesos;

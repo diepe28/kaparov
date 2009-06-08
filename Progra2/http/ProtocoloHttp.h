@@ -35,5 +35,6 @@ typedef RespuestaHttp * (*ManejadorHttp)(SolicitudHttp *);
 ServidorHttp * crearServidorHttp(short puerto, int maxSolicitudes);
 void finalizarServidorHttp(ServidorHttp * servidor);
 int aceptarSolicitudHttp(ServidorHttp * servidor, ManejadorHttp manejador);
+char * solicitudHttpABytes (SolicitudHttp * solicitudHttp, int tamSolicitud);
 
 #endif // PROTOCOLO_HTTP_H
