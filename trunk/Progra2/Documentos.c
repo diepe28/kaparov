@@ -20,6 +20,9 @@ RespuestaHttp * buscarDocumento(SolicitudHttp * solicitudHttp)
     char buffer[TAM_BUFFER];
     int numChars;
 
+    char * tmpMensaje;
+    int longitudTmpMensaje;
+
     // Verificar que el metodo sea GET
     if (solicitudHttp == NULL || solicitudHttp->metodo != GET)
         return NULL;
@@ -60,10 +63,27 @@ RespuestaHttp * buscarDocumento(SolicitudHttp * solicitudHttp)
     } else {
         while (!feof(documento)) {
             if ((numChars = fread(buffer, sizeof(char), TAM_BUFFER, documento)) > 0) {
-                respuestaHttp->mensaje = realloc(respuestaHttp->mensaje,
-                    numChars + respuestaHttp->longitudMensaje);
-                memcpy(respuestaHttp->mensaje + respuestaHttp->longitudMensaje, buffer, numChars);
+
+                printf("Chars leidos: %d\n", numChars);
+
+                if (respuestaHttp->mensaje != NULL) {
+                    tmpMensaje = malloc(respuestaHttp->longitudMensaje);
+                    longitudTmpMensaje = respuestaHttp->longitudMensaje;
+                    memcpy(tmpMensaje, respuestaHttp->mensaje, respuestaHttp->longitudMensaje);
+                }
+
                 respuestaHttp->longitudMensaje += numChars;
+                free(respuestaHttp->mensaje);
+                printf("Nueva longitud de mensaje:%d\n", respuestaHttp->longitudMensaje);
+
+                respuestaHttp->mensaje = malloc(respuestaHttp->longitudMensaje);
+                printf("Memoria asignada para solicitud\n");
+
+                if (tmpMensaje != NULL)
+                    memcpy(respuestaHttp->mensaje, tmpMensaje, longitudTmpMensaje);
+
+                memcpy(respuestaHttp->mensaje + longitudTmpMensaje, buffer, numChars);
+                printf("Memoria copiada\n");
             }
         }
         fclose(documento);
