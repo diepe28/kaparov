@@ -136,7 +136,7 @@ char * solicitudHttpABytes (SolicitudHttp * solicitudHttp, int tamSolicitud)
     char * bytesRespuesta;
     char encabezado [TAM_BUFFER];
 
-    char fin [3];    
+    char fin [3];
 
     char versionMayor[2];
     char versionMenor[2];
@@ -148,15 +148,17 @@ char * solicitudHttpABytes (SolicitudHttp * solicitudHttp, int tamSolicitud)
     tamEncabezado = 0;
 
     //Poner el método en el encabezado
-    strcpy (bytesRespuesta, solicitudHttp->metodo);
-    tamEncabezado += 3;
+    if (solicitudHttp->metodo == GET) {
+        strcpy (bytesRespuesta, "GET");
+        tamEncabezado += 3;
+    }
 
     //Espacio luego del método
     strcat (bytesRespuesta, " ");
 
     //Agregando el url de la solicitud
     strcat (bytesRespuesta, solicitudHttp->url);
-  
+
     //Agregando espacio y Http
     strcat (bytesRespuesta, " HTTP/");
 
@@ -170,11 +172,11 @@ char * solicitudHttpABytes (SolicitudHttp * solicitudHttp, int tamSolicitud)
     tamHilera = sprintf(versionMenor, "%d", solicitudHttp->versionMenor);
     strncpy(encabezado + tamEncabezado, versionMenor, tamHilera);
     tamEncabezado += tamHilera;
-    
+
     //ponemos el final
     fin[0] = '\13';	fin [1] = '\10';	fin[2] = '\0';
     strcat (bytesRespuesta, fin);
-    
+
     return bytesRespuesta;
 }
 
@@ -240,8 +242,6 @@ char * respuestaHttpABytes(RespuestaHttp * respuestaHttp, int * tamBytes)
 
 
     *tamBytes = tamEncabezado + respuestaHttp->longitudMensaje;
-
-    printf("Respuesta (%d bytes enc): %s\n", tamEncabezado, bytesRespuesta);
 
     return bytesRespuesta;
 }
