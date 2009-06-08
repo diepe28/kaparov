@@ -32,6 +32,7 @@ typedef struct paramCli
     int nProcesos;
     int puertoArchivo;
     char* archivo;
+    char* host;
 } paramCliente;
 
 long int getTimeMil ()
@@ -82,7 +83,7 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 		exit(0);
 	}*/
 	if ((fdArc = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket");
+		printf("socket error\n");
 		return;
 	}
 
@@ -100,6 +101,10 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
                printf ("error en el recv\n");
                 exit(1);
         }
+	else
+	{
+	  printf ("%s\n", buffer);
+	}
 /*
 	else{
 		memset(bufferfinal, 0, MAX_BUFFER);
@@ -133,7 +138,7 @@ void *llamarN (void* params)
     while (iter<PC->nProcesos)
     {
         long int inicioEspera = getTimeMil();
-        recibirArchivo (PC->idsocket, PC->puertoArchivo, PC->archivo, "186.15.2.122");
+        recibirArchivo (PC->idsocket, PC->puertoArchivo, PC->archivo, PC->host);
         long int finEspera = getTimeMil();
         pthread_mutex_lock (&esperaConexion);
         tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;
