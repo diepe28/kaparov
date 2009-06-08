@@ -1,4 +1,4 @@
-SRCFIFO = $(SRCDIR)/ServidorFIFO.c $(SRCDIR)/http/ProtocoloHttp.c
+SRCFIFO = $(SRCDIR)/ServidorFIFO.c $(SRCDIR)/Documentos.c $(SRCDIR)/http/ProtocoloHttp.c
 SRCCLIENTE = $(SRCDIR)/cliente.c $(SRCDIR)/cliente_socket_functions.c
 SRCDIR = .
 BINDIR = bin
