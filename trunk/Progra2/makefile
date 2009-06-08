@@ -1,13 +1,17 @@
+SRCFIFO = $(SRCDIR)/ServidorFIFO.c $(SRCDIR)/http/ProtocoloHttp.c
+SRCCLIENTE = $(SRCDIR)/cliente.c $(SRCDIR)/cliente_socket_functions.c
+SRCDIR = .
+BINDIR = bin
+CFLAGS = -std=gnu99 -pedantic -g -Wall
 
-# Save this as 'Makefile' in the directory with your source
-# Type 'make' to compile 'mysignal.c'
-# Type 'make clean' to remove the executable and any *.o files
-# Type 'info make' to get more information about how make works
+all: fifo cliente
 
-all: cliente
+fifo: $(SRCFIFO)
+	gcc $(CFLAGS) -o $(BINDIR)/servidorFIFO $(SRCFIFO)
 
-cliente: cliente.c cliente_socket_functions.c
-	gcc -o cliente cliente.c -lpthread -lm
+cliente: $(SRCCLIENTE)
+	gcc -o $(BINDIR)/cliente $(SRCDIR)/cliente.c -lpthread -lm
 
 clean:
-	rm -f *.o prueba
+	rm -f $(BINDIR)/*.o $(BINDIR)/servidorFIFO $(BINDIR)/cliente $(BINDIR)/prueba
+
