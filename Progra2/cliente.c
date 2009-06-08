@@ -21,14 +21,14 @@ int main (int argc, char *argv[])
     {
 	printf ("%s\n", argv[i]); 
     }*/
-      printf ("Prueba");
-	if (argc != 6)
+      printf ("Prueba\n");
+	//if (argc != 6)
 	{
         printf ("Se espera que reciba como parámetros <maquina> <puerto> <archivo> <N-Threads> <Nciclos>\n");
         return 0;
 	}
 
-    else
+    //else
     {
       printf ("Se van a asignar valores");
 
@@ -43,6 +43,7 @@ int main (int argc, char *argv[])
         paramCliente pc;
         pc.nProcesos = procesos;
         pc.archivo = archi;
+	pc.host = hostName;
 
         pthread_t *hilosCliente = malloc(sizeof(pthread_t)*hilos);
 
