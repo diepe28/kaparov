@@ -237,9 +237,9 @@ char * respuestaHttpABytes(RespuestaHttp * respuestaHttp, int * tamBytes)
 
     // Unir encabezado con contenido del mensaje
     bytesRespuesta = malloc(tamEncabezado + respuestaHttp->longitudMensaje);
-    strncpy(bytesRespuesta, encabezado, tamEncabezado);
-    strncpy(bytesRespuesta + tamEncabezado, respuestaHttp->mensaje, respuestaHttp->longitudMensaje);
-
+    memcpy(bytesRespuesta, encabezado, tamEncabezado);
+    if (respuestaHttp->longitudMensaje > 0)
+        memcpy(bytesRespuesta + tamEncabezado, respuestaHttp->mensaje, respuestaHttp->longitudMensaje);
 
     *tamBytes = tamEncabezado + respuestaHttp->longitudMensaje;
 
