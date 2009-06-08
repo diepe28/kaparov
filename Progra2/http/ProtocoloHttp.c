@@ -136,8 +136,8 @@ char * respuestaHttpABytes(RespuestaHttp * respuestaHttp, int * tamBytes)
     char * bytesRespuesta;
     char encabezado[TAM_BUFFER];
 
-    char versionMayor[8];
-    char versionMenor[8];
+    char versionMayor[2];
+    char versionMenor[2];
     int tamHilera, tamEncabezado;
 
     // Inicializar encabezado
@@ -146,15 +146,55 @@ char * respuestaHttpABytes(RespuestaHttp * respuestaHttp, int * tamBytes)
 
     // Almacenar version de HTTP en el encabezado
     strcpy(encabezado, "HTTP/");
-    tamEncabezado =+ 5;
+    tamEncabezado += 5;
 
     tamHilera = sprintf(versionMayor, "%d", respuestaHttp->versionMayor);
     strncpy(encabezado + tamEncabezado, versionMayor, tamHilera);
     tamEncabezado += tamHilera;
 
+    strncpy(encabezado + tamEncabezado, ".", 1);
+    tamEncabezado++;
+
     tamHilera = sprintf(versionMenor, "%d", respuestaHttp->versionMenor);
     strncpy(encabezado + tamEncabezado, versionMenor, tamHilera);
     tamEncabezado += tamHilera;
+
+    strncpy(encabezado + tamEncabezado, " ", 1);
+    tamEncabezado++;
+
+    // Agregar codigo de error
+    if (respuestaHttp->codigoError == OK)
+        strncpy(encabezado + tamEncabezado, "200", 3);
+    else if (respuestaHttp->codigoError == NOT_FOUND)
+        strncpy(encabezado + tamEncabezado, "404", 3);
+    else
+        strncpy(encabezado + tamEncabezado, "500", 3);
+
+    tamEncabezado += 3;
+
+    strncpy(encabezado + tamEncabezado, " ", 1);
+    tamEncabezado++;
+
+    // Agregar descripcion del error
+    strcpy(encabezado + tamEncabezado, respuestaHttp->descripcionError);
+    tamEncabezado += strlen(respuestaHttp->descripcionError);
+
+    // Agregar cambio de linea
+    strncpy(encabezado + tamEncabezado, "\x0D\x0A", 2);
+    tamEncabezado += 2;
+
+    strncpy(encabezado + tamEncabezado, "\x0D\x0A", 2);
+    tamEncabezado += 2;
+
+    // Unir encabezado con contenido del mensaje
+    bytesRespuesta = malloc(tamEncabezado + respuestaHttp->longitudMensaje);
+    strncpy(bytesRespuesta, encabezado, tamEncabezado);
+    strncpy(bytesRespuesta + tamEncabezado, respuestaHttp->mensaje, respuestaHttp->longitudMensaje);
+
+
+    *tamBytes = tamEncabezado + respuestaHttp->longitudMensaje;
+
+    printf("Respuesta (%d bytes enc): %s\n", tamEncabezado, bytesRespuesta);
 
     return bytesRespuesta;
 }
