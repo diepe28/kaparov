@@ -8,7 +8,9 @@
 
 #include "ProtocoloHttp.h"
 
-#define TAM_BUFFER 1024
+#define TAM_BUFFER 4096
+
+static char buffer[TAM_BUFFER];
 
 ServidorHttp * crearServidorHttp(short puerto, int maxSolicitudes)
 {
@@ -86,7 +88,7 @@ SolicitudHttp * bytesASolicitudHttp(char * bytesSolicitud, int tamSolicitud)
     char * url;
     char * versionHttp;
 
-    // Extraer linea de la solicitud HTTP
+    // Extraer primera linea de la solicitud HTTP
     linea = extraerLineaHttp(bytesSolicitud, tamSolicitud, 0);
 
     // Extraer metodo, url, y version de la solicitud HTTP
@@ -123,7 +125,7 @@ SolicitudHttp * bytesASolicitudHttp(char * bytesSolicitud, int tamSolicitud)
             solicitudHttp->versionMenor = atoi(versionMenor);
         }
 
-            // TODO: seguir con los demas campos de la solicitud
+        // TODO: seguir con los demas campos de la solicitud
     }
 
     free(linea);
@@ -167,7 +169,7 @@ char * solicitudHttpABytes (SolicitudHttp * solicitudHttp, int tamSolicitud)
     strncpy(encabezado + tamEncabezado, versionMayor, tamHilera);
     tamEncabezado += tamHilera;
 
-     strcat (bytesRespuesta, ".");
+    strcat (bytesRespuesta, ".");
 
     tamHilera = sprintf(versionMenor, "%d", solicitudHttp->versionMenor);
     strncpy(encabezado + tamEncabezado, versionMenor, tamHilera);
@@ -180,7 +182,7 @@ char * solicitudHttpABytes (SolicitudHttp * solicitudHttp, int tamSolicitud)
     return bytesRespuesta;
 }
 
-char * respuestaHttpABytes(RespuestaHttp * respuestaHttp, int * tamBytes)
+char * respuestaHttpABytes2(RespuestaHttp * respuestaHttp, int * tamBytes)
 {
     char * bytesRespuesta;
     char encabezado[TAM_BUFFER];
@@ -246,6 +248,71 @@ char * respuestaHttpABytes(RespuestaHttp * respuestaHttp, int * tamBytes)
     return bytesRespuesta;
 }
 
+void respuestaHttpABytes(RespuestaHttp * respuestaHttp, char * bytesRespuesta, int * tamRespuesta)
+{
+    char versionMayor[2];
+    char versionMenor[2];
+    int tamHilera, tamEncabezado;
+
+    // Inicializar encabezado
+    memset(bytesRespuesta, 0, *tamRespuesta);
+    tamEncabezado = 0;
+
+    // Almacenar version de HTTP en el encabezado
+    strcpy(bytesRespuesta, "HTTP/");
+    tamEncabezado += 5;
+
+    tamHilera = sprintf(versionMayor, "%d", respuestaHttp->versionMayor);
+    strncpy(bytesRespuesta + tamEncabezado, versionMayor, tamHilera);
+    tamEncabezado += tamHilera;
+
+    strncpy(bytesRespuesta + tamEncabezado, ".", 1);
+    tamEncabezado++;
+
+    tamHilera = sprintf(versionMenor, "%d", respuestaHttp->versionMenor);
+    strncpy(bytesRespuesta + tamEncabezado, versionMenor, tamHilera);
+    tamEncabezado += tamHilera;
+
+    strncpy(bytesRespuesta + tamEncabezado, " ", 1);
+    tamEncabezado++;
+
+    // Agregar codigo de error
+    if (respuestaHttp->codigoError == OK)
+        strncpy(bytesRespuesta + tamEncabezado, "200", 3);
+    else if (respuestaHttp->codigoError == NOT_FOUND)
+        strncpy(bytesRespuesta + tamEncabezado, "404", 3);
+    else
+        strncpy(bytesRespuesta + tamEncabezado, "500", 3);
+
+    tamEncabezado += 3;
+
+    strncpy(bytesRespuesta + tamEncabezado, " ", 1);
+    tamEncabezado++;
+
+    // Agregar descripcion del error
+    strcpy(bytesRespuesta + tamEncabezado, respuestaHttp->descripcionError);
+    tamEncabezado += strlen(respuestaHttp->descripcionError);
+
+    // Agregar cambio de linea
+    strncpy(bytesRespuesta + tamEncabezado, "\x0D\x0A", 2);
+    tamEncabezado += 2;
+
+    strncpy(bytesRespuesta + tamEncabezado, "\x0D\x0A", 2);
+    tamEncabezado += 2;
+
+    // Unir encabezado con contenido del mensaje
+    /*bytesRespuesta = malloc(tamEncabezado + respuestaHttp->longitudMensaje);
+    memcpy(bytesRespuesta, encabezado, tamEncabezado);
+    if (respuestaHttp->longitudMensaje > 0)
+        memcpy(bytesRespuesta + tamEncabezado, respuestaHttp->mensaje, respuestaHttp->longitudMensaje);
+
+    *tamBytes = tamEncabezado + respuestaHttp->longitudMensaje;
+    */
+
+    //return bytesRespuesta;
+    *tamRespuesta = tamEncabezado;
+}
+
 void liberarSolicitudHttp(SolicitudHttp * solicitudHttp)
 {
     free(solicitudHttp->url);
@@ -265,16 +332,8 @@ int aceptarSolicitudHttp(ServidorHttp * servidor, ManejadorHttp manejador)
     int idSocket;
     struct sockaddr_in dirSocket;
     socklen_t tamDirSocket;
-    int opcionesSocket;
 
     int numBytes;
-    char buffer[TAM_BUFFER];
-
-    int tamSolicitud;
-    char * bytesSolicitud;
-
-    int tamRespuesta;
-    char * bytesRespuesta;
 
     SolicitudHttp * solicitudHttp;
     RespuestaHttp * respuestaHttp;
@@ -287,10 +346,8 @@ int aceptarSolicitudHttp(ServidorHttp * servidor, ManejadorHttp manejador)
 
     // Recibir solicitud del cliente
     memset(buffer, 0, sizeof buffer);
-    bytesSolicitud = NULL;
-    tamSolicitud = 0;
 
-    opcionesSocket = 0;
+    /*opcionesSocket = 0;
     while ((numBytes = recv(idSocket, buffer, sizeof buffer, opcionesSocket)) > 0) {
         bytesSolicitud = realloc(bytesSolicitud, tamSolicitud + numBytes);
         if (bytesSolicitud != NULL) {
@@ -300,13 +357,15 @@ int aceptarSolicitudHttp(ServidorHttp * servidor, ManejadorHttp manejador)
 
         if (numBytes < sizeof buffer) break;
         opcionesSocket = MSG_DONTWAIT;
-    }
+    }*/
+
+    numBytes = recv(idSocket, buffer, sizeof buffer, 0);
 
     // Llamar al manejador HTTP con la solicitud recibida y responder al cliente
-    if (tamSolicitud > 0) {
+    if (numBytes > 0) {
 
         // Convertir bytes a estructura para la solicitud HTTP
-        solicitudHttp = bytesASolicitudHttp(bytesSolicitud, tamSolicitud);
+        solicitudHttp = bytesASolicitudHttp(buffer, numBytes);
 
         // Invocar manejador y responder al cliente
         if (solicitudHttp != NULL && manejador != NULL) {
@@ -316,8 +375,38 @@ int aceptarSolicitudHttp(ServidorHttp * servidor, ManejadorHttp manejador)
             if (respuestaHttp != NULL) {
 
                 // Responder al socket cliente
-                bytesRespuesta = respuestaHttpABytes(respuestaHttp, &tamRespuesta);
-                send(idSocket, bytesRespuesta, tamRespuesta, 0);
+                //bytesRespuesta = respuestaHttpABytes(respuestaHttp, &tamRespuesta);
+                //send(idSocket, bytesRespuesta, tamRespuesta, 0);
+
+                numBytes = TAM_BUFFER;
+                respuestaHttpABytes(respuestaHttp, buffer, &numBytes);
+                send(idSocket, buffer, numBytes, 0);
+
+                printf("Encabezado enviado de %d bytes\n", numBytes);
+
+                while (!feof(respuestaHttp->documento)) {
+
+                    if ((numBytes = fread(buffer, sizeof(char), TAM_BUFFER, respuestaHttp->documento)) > 0) {
+
+                        printf("Bytes leidos archivo: %d\n", numBytes);
+
+                        //respuestaHttp->longitudMensaje += numChars;
+                        //free(respuestaHttp->mensaje);
+                        //printf("Nueva longitud de mensaje:%d\n", respuestaHttp->longitudMensaje);
+
+                        //respuestaHttp->mensaje = malloc(respuestaHttp->longitudMensaje);
+                        //printf("Memoria asignada para solicitud\n");
+
+                        //if (tmpMensaje != NULL)
+                        //memcpy(respuestaHttp->mensaje, tmpMensaje, longitudTmpMensaje);
+
+                        //memcpy(respuestaHttp->mensaje + longitudTmpMensaje, buffer, numChars);
+                        send(idSocket, buffer, numBytes, 0);
+                        printf("Bytes enviados de archivo\n");
+                    }
+                }
+
+                fclose(respuestaHttp->documento);
 
                 // Liberar memoria respueta HTTP
                 liberarRespuestaHttp(respuestaHttp);
@@ -327,9 +416,6 @@ int aceptarSolicitudHttp(ServidorHttp * servidor, ManejadorHttp manejador)
         // Liberar memoria solicitud HTTP
         liberarSolicitudHttp(solicitudHttp);
     }
-
-    // Liberar memoria de los bytes de la solicitud
-    free(bytesSolicitud);
 
     // Cerrar socket
     close(idSocket);
