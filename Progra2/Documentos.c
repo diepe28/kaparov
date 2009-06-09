@@ -17,11 +17,11 @@ RespuestaHttp * buscarDocumento(SolicitudHttp * solicitudHttp)
     char nomDocumento[TAM_NOM_DOCUMENTO];
     FILE * documento;
 
-    char buffer[TAM_BUFFER];
-    int numChars;
+    //char buffer[TAM_BUFFER];
+    //int numChars;
 
-    char * tmpMensaje;
-    int longitudTmpMensaje;
+    //char * tmpMensaje;
+    //int longitudTmpMensaje;
 
     // Verificar que el metodo sea GET
     if (solicitudHttp == NULL || solicitudHttp->metodo != GET)
@@ -53,6 +53,8 @@ RespuestaHttp * buscarDocumento(SolicitudHttp * solicitudHttp)
     // Buscar y leer archivo
     documento = fopen(nomDocumento, "r");
 
+    respuestaHttp->documento = documento;
+
     if (documento == NULL) {
         // Archivo no encontrado
         respuestaHttp->codigoError = NOT_FOUND;
@@ -61,6 +63,7 @@ RespuestaHttp * buscarDocumento(SolicitudHttp * solicitudHttp)
         printf("Documento no encontrado\n");
 
     } else {
+        /*
         while (!feof(documento)) {
             if ((numChars = fread(buffer, sizeof(char), TAM_BUFFER, documento)) > 0) {
 
@@ -86,7 +89,9 @@ RespuestaHttp * buscarDocumento(SolicitudHttp * solicitudHttp)
                 printf("Memoria copiada\n");
             }
         }
+
         fclose(documento);
+        */
 
         // Codigo de la respuesta
         respuestaHttp->codigoError = OK;

@@ -11,7 +11,6 @@ int puertoVideo=8059; //desde el 8050
 int hilos=0;
 int procesos=0;
 
-
 void mostrarEstadisticas();
 
 int main (int argc, char *argv[])
@@ -19,7 +18,7 @@ int main (int argc, char *argv[])
    /* int i;
     for (i = 1; i<6;i++)
     {
-	printf ("%s\n", argv[i]); 
+	printf ("%s\n", argv[i]);
     }*/
       printf ("Prueba\n");
 	//if (argc != 6)
