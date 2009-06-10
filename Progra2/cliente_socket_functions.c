@@ -13,18 +13,6 @@
 #include "http/ProtocoloHttp.h"
 
 
-/**
-  *  Estadísticos
-  */
-long int tiempoEsperaEnSerAtendido = 0;
-long int cantidadDeVecesQueEsIgnorado = 0;
-long int tiempoEnRecibirArchivo = 0;
-
-/**
-  *  Semáforos
-  */
-pthread_mutex_t esperaRecibir;
-pthread_mutex_t esperaConexion;
 
 typedef struct paramCli
 {
@@ -131,20 +119,5 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 }
 
 
-void *llamarN (void* params)
-{
-    int iter = 0;
-    paramCliente *PC = (paramCliente *) params;
-    while (iter<PC->nProcesos)
-    {
-        long int inicioEspera = getTimeMil();
-        recibirArchivo (PC->idsocket, PC->puertoArchivo, PC->archivo, PC->host);
-        long int finEspera = getTimeMil();
-        pthread_mutex_lock (&esperaConexion);
-        tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;
-        pthread_mutex_unlock (&esperaConexion);
-        iter++;
-    }
-    return NULL;
-}
+
 

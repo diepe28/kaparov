@@ -1,5 +1,5 @@
 #include "cliente_socket_functions.c"
-//#include "http/ProtocoloHttp.c"
+#include "Estadísticos.c"
 
 
 int QUE_HACER = 0;
@@ -13,6 +13,8 @@ int procesos=0;
 
 void mostrarEstadisticas();
 
+void *llamarN (void* params);
+
 int main (int argc, char *argv[])
 {
    /* int i;
@@ -21,15 +23,15 @@ int main (int argc, char *argv[])
 	printf ("%s\n", argv[i]);
     }*/
       printf ("Prueba\n");
-	//if (argc != 6)
+	if (argc != 6)
 	{
         printf ("Se espera que reciba como parámetros <maquina> <puerto> <archivo> <N-Threads> <Nciclos>\n");
         return 0;
 	}
 
-    //else
+   else
     {
-      printf ("Se van a asignar valores");
+      printf ("Se van a asignar valores\n");
 
         hostName = argv[1];
         puertoVideo = atoi(argv[2]);
@@ -37,7 +39,7 @@ int main (int argc, char *argv[])
         hilos = atoi(argv[4]);
         procesos = atoi(argv[5]);
 
-	printf ("Se asignan valores");
+	printf ("Se asignan valores\n");
 
         paramCliente pc;
         pc.nProcesos = procesos;
@@ -54,7 +56,10 @@ int main (int argc, char *argv[])
           for (i = 0; i<hilos;i++)
               pthread_join(hilosCliente[i], NULL);
 
+	sleep (10);
+	pthread_mutex_lock (&esperaRecibir);
         mostrarEstadisticas();
+	pthread_mutex_unlock (&esperaRecibir);
     }
 
 /*
@@ -78,8 +83,35 @@ int main (int argc, char *argv[])
  	return 0;
 }
 
+void *llamarN (void* params)
+{
+    int iter = 0;
+    paramCliente *PC = (paramCliente *) params;
+    while (iter < PC->nProcesos)
+    {
+	int numBytes = 0;
+	while (numBytes == 0)
+	{
+	  long int inicioEspera = getTimeMil();
+	  numBytes = solicitarDocumentoPorHttp (PC->archivo, PC->puertoArchivo,  PC->host);
+	  long int finEspera = getTimeMil();
+	  pthread_mutex_lock (&esperaConexion);
+	  tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;
+	  pthread_mutex_unlock (&esperaConexion);
+	}
+        iter++;
+	pthread_mutex_lock (&esperaRecibir);
+	cantidadDeVecesAtendido++;
+	pthread_mutex_unlock (&esperaRecibir);
+    }
+    //return NULL;
+}
+
 void mostrarEstadisticas()
 {
+  
+    printf ("%ld tiempo de espera, %ld cantidad de iteraciones\n", tiempoEsperaEnSerAtendido, cantidadDeVecesAtendido);
+  
 }
 
 
