@@ -18,7 +18,7 @@ typedef struct paramCli
 {
     int idsocket;
     int nProcesos;
-    int puertoArchivo;
+    short puertoArchivo;
     char* archivo;
     char* host;
 } paramCliente;

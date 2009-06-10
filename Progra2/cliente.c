@@ -7,7 +7,7 @@ int QUE_HACER = 0;
 char* hostName;
 char* archi;
 int fd=0; /*Id del socket para la conexion*/
-int puertoVideo=8059; //desde el 8050
+short puertoVideo=8059; //desde el 8050
 int hilos=0;
 int procesos=0;
 
@@ -39,18 +39,20 @@ int main (int argc, char *argv[])
         hilos = atoi(argv[4]);
         procesos = atoi(argv[5]);
 
-	printf ("Se asignan valores\n");
+	printf ("Se asignan valores, puerto vale: %d\n", puertoVideo);
 
         paramCliente pc;
         pc.nProcesos = procesos;
         pc.archivo = archi;
 	pc.host = hostName;
+	pc.puertoArchivo = puertoVideo;
 
         pthread_t *hilosCliente = malloc(sizeof(pthread_t)*hilos);
 
           int i;
           for(i=0;i<hilos;i++)
           {
+	      printf ("levantamos un hilo \n");
               pthread_create(&hilosCliente[i], NULL, llamarN, &pc);
           }
           for (i = 0; i<hilos;i++)
@@ -94,6 +96,7 @@ void *llamarN (void* params)
 	{
 	  long int inicioEspera = getTimeMil();
 	  numBytes = solicitarDocumentoPorHttp (PC->archivo, PC->puertoArchivo,  PC->host);
+	  printf ("En el cliente, numbytes vale : %d\n", numBytes);
 	  long int finEspera = getTimeMil();
 	  pthread_mutex_lock (&esperaConexion);
 	  tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;
