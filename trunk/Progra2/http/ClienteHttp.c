@@ -24,6 +24,8 @@ int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const cha
     printf ("Valores de llamada: archivo: %s, puerto: %d, host: %s\n", urlDocumento, puerto, nomServidor );
     int bytesLeidos;
 
+    int totalBytes = 0;
+
     char strPuerto[5];
     struct addrinfo dirBuscada, *dirEncontradas, *dirServidor;
 
@@ -70,15 +72,38 @@ int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const cha
         numBytes = strlen(buffer);
         if (send(idSocket, buffer, numBytes, 0) == numBytes) {
 
+	    if (shutdown(idSocket, SHUT_WR) == -1) printf ("Error en shutdown\n");
+
+	    fd_set read_fd_set;
+
+	    FD_ZERO (&read_fd_set);
+
+	    do {
+	        FD_SET (idSocket, &read_fd_set);
+		select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL);
+               
+		if (!FD_ISSET(idSocket, &read_fd_set)) break;
+
+		numBytes = recv(idSocket, buffer, sizeof buffer, 0);
+		totalBytes +=numBytes;
+
+		if (numBytes == 0) break;
+	
+		printf ("Bytes recibidos: %d\n", numBytes );
+
+	    } while(FD_ISSET(idSocket, &read_fd_set));
+
+	      printf ("Salgo del WHILE: \n");
+
             // Recibir respuesta
-            opcionesSocket = 0;
+            /*opcionesSocket = 0;
             bytesLeidos = 0;
             while ((numBytes = recv(idSocket, buffer, sizeof buffer, opcionesSocket)) > 0) {
 	        printf ("Bytes leidos: %d\n", numBytes );
                 bytesLeidos += numBytes;
                 if (numBytes < sizeof buffer) break;
                 opcionesSocket = MSG_DONTWAIT;
-            }
+            }*/
 
         }
 
@@ -90,5 +115,5 @@ int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const cha
     // Liberar direcciones encontradas
     freeaddrinfo(dirEncontradas);
 
-    return bytesLeidos;
+    return totalBytes;
 }
