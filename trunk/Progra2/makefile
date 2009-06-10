@@ -10,7 +10,7 @@ fifo: $(SRCFIFO)
 	gcc $(CFLAGS) -o $(BINDIR)/servidorFIFO $(SRCFIFO)
 
 cliente: $(SRCCLIENTE)
-	gcc -o $(BINDIR)/cliente $(SRCDIR)/cliente.c $(SRCDIR)/http/ProtocoloHttp.c -lpthread -lm
+	gcc -o $(BINDIR)/cliente $(SRCDIR)/cliente.c $(SRCDIR)/http/ProtocoloHttp.c $(SRCDIR)/http/ClienteHttp.c -lpthread -lm
 
 clean:
 	rm -f $(BINDIR)/*.o $(BINDIR)/servidorFIFO $(BINDIR)/cliente $(BINDIR)/prueba
