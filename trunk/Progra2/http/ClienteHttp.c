@@ -12,12 +12,16 @@
 #include "ClienteHttp.h"
 
 
-#define TAM_BUFFER 4096
+#define TAM_BUFFER 1024
 
-static char buffer[TAM_BUFFER];
+
 
 int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const char * nomServidor)
 {
+
+    char buffer[TAM_BUFFER];
+
+    printf ("Valores de llamada: archivo: %s, puerto: %d, host: %s\n", urlDocumento, puerto, nomServidor );
     int bytesLeidos;
 
     char strPuerto[5];
@@ -70,6 +74,7 @@ int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const cha
             opcionesSocket = 0;
             bytesLeidos = 0;
             while ((numBytes = recv(idSocket, buffer, sizeof buffer, opcionesSocket)) > 0) {
+	        printf ("Bytes leidos: %d\n", numBytes );
                 bytesLeidos += numBytes;
                 if (numBytes < sizeof buffer) break;
                 opcionesSocket = MSG_DONTWAIT;

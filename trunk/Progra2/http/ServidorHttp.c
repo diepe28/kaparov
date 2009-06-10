@@ -13,8 +13,7 @@
 #define TAM_BUFFER 4096
 #define TAM_NOM_DOCUMENTO 1024
 
-static char buffer[TAM_BUFFER];
-static char nomDocumento[TAM_NOM_DOCUMENTO];
+
 
 static const char * CarpertaDocs = "docs";
 static const char * DocumentoInicial = "index.html";
@@ -58,7 +57,7 @@ void finalizarServidorHttp(ServidorHttp * servidor)
     free(servidor);
 }
 
-char * obtenerNomDocumento(char * bytes, int tamBytes)
+char * obtenerNomDocumento(char * bytes, int tamBytes, char * nomDocumento, int tamNomDocumento)
 {
     int tamLinea;
     int indice;
@@ -88,7 +87,7 @@ char * obtenerNomDocumento(char * bytes, int tamBytes)
     if (url == NULL) return NULL;
 
     // Convertir URL a nombre de documento : CarpetaDocs/url
-    memset(nomDocumento, 0, sizeof nomDocumento);
+    memset(nomDocumento, 0, tamNomDocumento);
     strcpy(nomDocumento, CarpertaDocs);
 
     // Agregar "/" si no esta al inicio del url
@@ -108,6 +107,9 @@ char * obtenerNomDocumento(char * bytes, int tamBytes)
 
 int aceptarSolicitudHttp(ServidorHttp * servidor)
 {
+    char buffer[TAM_BUFFER];
+    char nomDocumento[TAM_NOM_DOCUMENTO];
+
     int idSocket;
     struct sockaddr_in dirSocket;
     socklen_t tamDirSocket;
@@ -131,7 +133,7 @@ int aceptarSolicitudHttp(ServidorHttp * servidor)
     }
 
     // Extraer url
-    docSolicitado = obtenerNomDocumento(buffer, numBytes);
+    docSolicitado = obtenerNomDocumento(buffer, numBytes, nomDocumento, TAM_NOM_DOCUMENTO);
 
     // Ignorar resto de la solicitud si la hay
     while ((numBytes = recv(idSocket, buffer, sizeof buffer, MSG_DONTWAIT)) > 0) {
@@ -187,3 +189,116 @@ int aceptarSolicitudHttp(ServidorHttp * servidor)
 
     return EXIT_SUCCESS;
 }
+
+
+int aceptarSolicitud (ServidorHttp * servidor)
+{
+    printf ("EStoy aceptando solicitud\n");
+
+    int idSocket;
+    struct sockaddr_in dirSocket;
+    socklen_t tamDirSocket;
+    
+        // Aceptar conexion del cliente
+    tamDirSocket = sizeof(struct sockaddr_in);
+    idSocket = accept(servidor->idSocket, (struct sockaddr *)&dirSocket, &tamDirSocket);
+
+    if (idSocket < 0) return -1;
+  
+    return idSocket;
+}
+
+void * enviarHTTP (void * idSocketParam)
+{
+    // Recibir solicitud del cliente
+    char buffer[TAM_BUFFER];
+    char nomDocumento[TAM_NOM_DOCUMENTO];    
+
+    printf ("EStoy enviando HHTP\n");
+
+    int idSocket = *((int *)idSocketParam);
+    int numBytes;
+
+    char * docSolicitado;
+    FILE * documento;
+
+    memset(buffer, 0, sizeof buffer);
+    numBytes = recv(idSocket, buffer, sizeof buffer, 0);
+    if (numBytes <= 0) {
+        close(idSocket);
+        return NULL;
+    }
+
+    // Extraer url
+    docSolicitado = obtenerNomDocumento(buffer, numBytes, nomDocumento, TAM_NOM_DOCUMENTO);
+
+    printf ("Doc solicitado: %s\n", docSolicitado);
+
+    // Ignorar resto de la solicitud si la hay
+    while ((numBytes = recv(idSocket, buffer, sizeof buffer, MSG_DONTWAIT)) > 0) {
+        if (numBytes < sizeof buffer) break;
+    }
+
+    // Linea de respuesta para el cliente
+    memset(buffer, 0, sizeof buffer);
+    strcpy(buffer, "HTTP/1.1 ");
+
+    // Buscar y leer archivo
+    documento = fopen(docSolicitado, "r");
+    if (documento == NULL) {
+        // Documento no encontrado
+        strcat(buffer, "404 Not Found");
+    } else {
+        // Documento encontrado
+        strcat(buffer, "200 OK");
+    }
+
+    printf ("Archivo  arhivo\n");
+
+    // Devolver encabezado
+    strcat(buffer, "\x0D\x0A\x0D\x0A");
+    numBytes = strlen(buffer);
+    if (send(idSocket, buffer, numBytes, 0) != numBytes) {
+        close(idSocket);
+        return NULL;
+    }
+
+    printf ("Encabezado devuelto\n");
+
+    if (documento == NULL) {
+        // Devolver mensaje de archivo no encontrado
+        strcpy(buffer,
+            "<html>"
+            "<head><title>Proyecto 2 SOA</title></head>"
+            "<body>"
+            "<h1>Documento no encontrado</h1>"
+            "<p>El documento solicitado no se ha encontrado.</p>"
+            "</body>"
+            "</html>");
+        numBytes = strlen(buffer);
+        send(idSocket, buffer, numBytes, 0);
+    } else {
+        // Devolver datos del archivo
+        while (!feof(documento)) {
+            if ((numBytes = fread(buffer, sizeof(char), TAM_BUFFER, documento)) > 0) {
+		printf ("bytes leidos del archivo:%d\n", numBytes);
+
+                numBytes = send(idSocket, buffer, numBytes, 0);
+		if (numBytes == -1) {
+		  printf ("send fallo\n", numBytes);
+		  break;
+		}
+		printf ("bytes enviados al socket:%d\n", numBytes);
+            }
+        }
+        fclose(documento);
+    }
+
+    printf ("Doc devuelto\n");
+
+    // Cerrar socket
+    close(idSocket);
+
+    //return EXIT_SUCCESS;
+}
+
