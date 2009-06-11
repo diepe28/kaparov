@@ -58,7 +58,7 @@ int main (int argc, char *argv[])
           for (i = 0; i<hilos;i++)
               pthread_join(hilosCliente[i], NULL);
 
-	sleep (10);
+	//sleep (10);
 	pthread_mutex_lock (&esperaRecibir);
         mostrarEstadisticas();
 	pthread_mutex_unlock (&esperaRecibir);
@@ -99,6 +99,7 @@ void *llamarN (void* params)
 	  printf ("En el cliente, numbytes vale : %d\n", numBytes);
 	  long int finEspera = getTimeMil();
 	  pthread_mutex_lock (&esperaConexion);
+	  cantidadDeBytesRecibidos += numBytes;
 	  tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;
 	  pthread_mutex_unlock (&esperaConexion);
 	}
@@ -112,8 +113,25 @@ void *llamarN (void* params)
 
 void mostrarEstadisticas()
 {
+
+     long int megas = (cantidadDeBytesRecibidos/1024)/1024;
+     long int kilobytes = cantidadDeBytesRecibidos/1024;
+    long int segundos = tiempoEsperaEnSerAtendido/1000;
   
-    printf ("%ld tiempo de espera, %ld cantidad de iteraciones\n", tiempoEsperaEnSerAtendido, cantidadDeVecesAtendido);
+    printf ("/********************************************\n");
+    printf ("***************ESTADISTICAS******************\n");
+    printf ("/********************************************\n");
+    printf ("** Tiempo total de espera en ser atendido: %ld segundos\n", tiempoEsperaEnSerAtendido/1000);
+    printf ("** Cantidad de veces que las peticiones estuvieron sin respuesta inmediata: %ld\n", cantidadDeVecesQueEsIgnorado);
+    printf ("** Promedio del tiempo que se tarda en atender las solicitudes: %ld\n", (tiempoEsperaEnSerAtendido/(hilos*procesos)));
+    printf ("** Total de bytes recibidos: %ld\n", cantidadDeBytesRecibidos);
+    printf ("** Total de Kb recibidos: %ld\n", kilobytes);
+    printf ("** Total de Mb recibidos: %ld\n", megas);
+    printf ("** Relacion bytes/milisegundos: %ld\n", (cantidadDeBytesRecibidos/tiempoEsperaEnSerAtendido));
+    printf ("** Relacion Kbytes/segundos: %ld\n", (kilobytes/segundos));
+    printf ("** Relacion Mb/segundos: %ld\n", (megas/segundos));
+    printf ("*********************************************\n");
+
   
 }
 
