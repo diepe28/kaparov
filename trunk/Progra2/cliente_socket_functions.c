@@ -10,9 +10,6 @@
 #include <sys/socket.h>
 #include <sys/timeb.h>
 #include <time.h>
-#include "http/ProtocoloHttp.h"
-
-
 
 typedef struct paramCli
 {
@@ -33,10 +30,10 @@ long int getTimeMil ()
 
 //void recibirArchivo(int idsocket, int puerto, char* archivo);
 
-void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
+/*void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 {
 
-	struct sockaddr_in clientArchivo;/* para la información de la dirección del cliente */
+	struct sockaddr_in clientArchivo;// para la información de la dirección del cliente 
 	clientArchivo.sin_family = AF_INET;
 	//clienteArchivo.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
 	inet_pton(AF_INET, host, &clientArchivo.sin_addr.s_addr);
@@ -44,7 +41,7 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 	
 
 	int sin_sizeArchivo;
-	int fdArc; // los ficheros descriptores */
+	int fdArc; // los ficheros descriptores 
 	int fd;
 
 	char buffer [1024];
@@ -63,13 +60,13 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 	int numbytes = strlen(encabezado);
 	//sin_sizeVideo=sizeof(struct sockaddr_in);
 	//int as=fork();
-	/*if(as==0){
+	//if(as==0){
 		char* comand=(char*)malloc(sizeof(char)*200);
 		sprintf(comand,"xine -pqg --no-logo --no-splash tcp://localhost:%d", params.puertoArchivo);
 		system(comand);
 		free(comand);
 		exit(0);
-	}*/
+	//}
 	if ((fdArc = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		printf("socket error\n");
 		return;
@@ -93,7 +90,7 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 	{
 	  printf ("%s\n", buffer);
 	}
-/*
+//*
 	else{
 		memset(bufferfinal, 0, MAX_BUFFER);
 		while(1){
@@ -113,10 +110,10 @@ void recibirArchivo (int idsocket, int puertoArchivo, char* archivo, char* host)
 			}
 		}
 	  }
-*/	
+	
 	
     return;
-}
+}*/
 
 
 
