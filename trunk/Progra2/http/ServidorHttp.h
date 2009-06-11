@@ -7,7 +7,7 @@ typedef struct {
 
 ServidorHttp * crearServidorHttp(short puerto, int maxSolicitudes);
 void finalizarServidorHttp(ServidorHttp * servidor);
-int aceptarSolicitudHttp(ServidorHttp * servidor);
+//int aceptarSolicitudHttp(ServidorHttp * servidor);
 
 
 int aceptarSolicitud (ServidorHttp * servidor);

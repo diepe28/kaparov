@@ -29,8 +29,14 @@ int main()
     printf("Conexiones en espera permitidas: %d\n", MAX_CONEXIONES_ESPERA);
 
     while (1) {
-        if (aceptarSolicitudHttp(servidor) != EXIT_SUCCESS)
+        /*if (aceptarSolicitudHttp(servidor) != EXIT_SUCCESS)
+            printf("No se pudo aceptar la solicitud\n");*/
+	int idSocket = aceptarSolicitud(servidor);
+	if (idSocket == -1) 
             printf("No se pudo aceptar la solicitud\n");
+	else
+	  enviarHTTP(&idSocket);
+
     }
 
     finalizarServidorHttp(servidor);

@@ -1,17 +1,21 @@
 SRCFIFO = $(SRCDIR)/ServidorFIFO.c $(SRCDIR)/http/ServidorHttp.c
 SRCTHREADED = $(SRCDIR)/ServidorThreaded.c $(SRCDIR)/http/ServidorHttp.c
+SRCPRETHREADED = $(SRCDIR)/ServidorPreThreaded.c $(SRCDIR)/http/ServidorHttp.c
 SRCCLIENTE = $(SRCDIR)/cliente.c $(SRCDIR)/cliente_socket_functions.c $(SRCDIR)/http/ProtocoloHttp.c
 SRCDIR = .
 BINDIR = bin
 #CFLAGS = -std=gnu99 -pedantic -g -Wall
 
-all: fifo cliente threaded
+all: fifo cliente threaded prethreaded
 
 fifo: $(SRCFIFO)
 	gcc $(CFLAGS) -o $(BINDIR)/servidorFIFO $(SRCFIFO)
 
 threaded: $(SRCTHREADED)
 	gcc $(CFLAGS) -o $(BINDIR)/servidorThreaded $(SRCTHREADED) -lpthread
+
+prethreaded: $(SRCPRETHREADED)
+	gcc $(CFLAGS) -o $(BINDIR)/servidorPreThreaded $(SRCPRETHREADED) -lpthread
 
 
 cliente: $(SRCCLIENTE)
