@@ -247,9 +247,25 @@ void * enviarHTTP (void * idSocketParam)
     printf ("Doc solicitado: %s\n", docSolicitado);
 
     // Ignorar resto de la solicitud si la hay
-    while ((numBytes = recv(idSocket, buffer, sizeof buffer, MSG_DONTWAIT)) > 0) {
+    /*while ((numBytes = recv(idSocket, buffer, sizeof buffer, MSG_DONTWAIT)) > 0) {
         if (numBytes < sizeof buffer) break;
-    }
+    }*/
+    fd_set read_fd_set;
+    FD_ZERO (&read_fd_set);
+
+    do {
+	FD_SET (idSocket, &read_fd_set);
+	select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL);	
+	if (!FD_ISSET(idSocket, &read_fd_set)) break;
+
+	numBytes = recv(idSocket, buffer, sizeof buffer, 0);
+	if (numBytes == 0 || numBytes < TAM_BUFFER) break;
+
+    } while(FD_ISSET(idSocket, &read_fd_set));
+
+
+    shutdown(idSocket,SHUT_RD);
+
 
     // Linea de respuesta para el cliente
     memset(buffer, 0, sizeof buffer);

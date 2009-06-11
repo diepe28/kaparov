@@ -12,7 +12,7 @@
 #include "ClienteHttp.h"
 
 
-#define TAM_BUFFER 1024
+#define TAM_BUFFER 4096
 
 
 
@@ -78,6 +78,7 @@ int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const cha
 
 	    FD_ZERO (&read_fd_set);
 
+	    int encabezadoRecibido = 0;
 	    do {
 	        FD_SET (idSocket, &read_fd_set);
 		select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL);
@@ -87,9 +88,10 @@ int solicitarDocumentoPorHttp(const char * urlDocumento, short puerto, const cha
 		numBytes = recv(idSocket, buffer, sizeof buffer, 0);
 		totalBytes +=numBytes;
 
-		if (numBytes == 0) break;
-	
 		printf ("Bytes recibidos: %d\n", numBytes );
+
+		if (numBytes == 0 || (numBytes < TAM_BUFFER && encabezadoRecibido)) break;
+		encabezadoRecibido = 1;	
 
 	    } while(FD_ISSET(idSocket, &read_fd_set));
 
