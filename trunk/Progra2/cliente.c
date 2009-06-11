@@ -1,5 +1,5 @@
 #include "cliente_socket_functions.c"
-#include "Estadísticos.c"
+#include "Estadisticos.c"
 
 
 int QUE_HACER = 0;
