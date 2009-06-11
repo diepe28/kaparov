@@ -23,9 +23,15 @@ ServidorHttp * crearServidorHttp(short puerto, int maxSolicitudes)
     int idSocket;
     struct sockaddr_in dirSocket;
 
+    int reuseVal;
+
     // Crear el socket
 	if ((idSocket = socket(PF_INET, SOCK_STREAM, 0)) < 0)
 		return NULL;
+
+    reuseVal = 0;
+    setsockopt(idSocket, SOL_SOCKET, SO_REUSEADDR, (void*)reuseVal, sizeof(int));
+
 
     // Parametros para enlazar el socket al puerto indicado y al nodo local
     memset(&dirSocket, 0, sizeof(struct sockaddr_in));
@@ -105,7 +111,7 @@ char * obtenerNomDocumento(char * bytes, int tamBytes, char * nomDocumento, int 
     return nomDocumento;
 }
 
-int aceptarSolicitudHttp(ServidorHttp * servidor)
+/*int aceptarSolicitudHttp(ServidorHttp * servidor)
 {
     char buffer[TAM_BUFFER];
     char nomDocumento[TAM_NOM_DOCUMENTO];
@@ -189,7 +195,7 @@ int aceptarSolicitudHttp(ServidorHttp * servidor)
 
     return EXIT_SUCCESS;
 }
-
+*/
 
 int aceptarSolicitud (ServidorHttp * servidor)
 {
@@ -198,12 +204,18 @@ int aceptarSolicitud (ServidorHttp * servidor)
     int idSocket;
     struct sockaddr_in dirSocket;
     socklen_t tamDirSocket;
+
     
-        // Aceptar conexion del cliente
+    // Aceptar conexion del cliente
     tamDirSocket = sizeof(struct sockaddr_in);
     idSocket = accept(servidor->idSocket, (struct sockaddr *)&dirSocket, &tamDirSocket);
 
     if (idSocket < 0) return -1;
+
+    struct linger linger;
+    linger.l_onoff = 1;
+    linger.l_linger = 0;
+    setsockopt(idSocket, SOL_SOCKET, SO_LINGER, &linger, sizeof(linger));
   
     return idSocket;
 }
@@ -302,6 +314,7 @@ void * enviarHTTP (void * idSocketParam)
     printf ("Doc devuelto\n");
 
     // Cerrar socket
+    shutdown(idSocket,SHUT_RDWR);
     close(idSocket);
 
     //return EXIT_SUCCESS;
