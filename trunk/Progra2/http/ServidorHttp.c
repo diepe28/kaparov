@@ -282,15 +282,20 @@ void * enviarHTTP (void * idSocketParam)
         while (!feof(documento)) {
             if ((numBytes = fread(buffer, sizeof(char), TAM_BUFFER, documento)) > 0) {
 		printf ("bytes leidos del archivo:%d\n", numBytes);
-
+	    
                 numBytes = send(idSocket, buffer, numBytes, 0);
-		if (numBytes == -1) {
-		  printf ("send fallo\n", numBytes);
+		if (numBytes == -1 || numBytes < TAM_BUFFER) {
+		  printf ("send fallo\n");
 		  break;
 		}
 		printf ("bytes enviados al socket:%d\n", numBytes);
             }
+	    if (ferror(documento)){
+	      break;
+	      printf ("Salida con error de documento\n");
+	    }
         }
+	printf ("Me dispongo a cerrar el documento\n");
         fclose(documento);
     }
 

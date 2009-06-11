@@ -98,10 +98,10 @@ void *llamarN (void* params)
 	  numBytes = solicitarDocumentoPorHttp (PC->archivo, PC->puertoArchivo,  PC->host);
 	  printf ("En el cliente, numbytes vale : %d\n", numBytes);
 	  long int finEspera = getTimeMil();
-	  pthread_mutex_lock (&esperaConexion);
+	  pthread_mutex_lock (&esperaRecibir);
 	  cantidadDeBytesRecibidos += numBytes;
 	  tiempoEsperaEnSerAtendido+=finEspera-inicioEspera;
-	  pthread_mutex_unlock (&esperaConexion);
+	  pthread_mutex_unlock (&esperaRecibir);
 	}
         iter++;
 	pthread_mutex_lock (&esperaRecibir);
